@@ -703,7 +703,7 @@
   <main class="shell">
     <header class="topbar">
       <div class="brand">
-        <div class="logo">🧑🏻‍💻</div>
+        <div class="logo" aria-label="UKCD Digital Interview">🧑🏻‍💻</div>
         <div>
           <h1>UKCD Digital Interview</h1>
           <p id="topSubtext">Applicant interview session</p>
@@ -717,7 +717,7 @@
         <section class="hero card">
           <div>
             <div class="hero-kicker"><span class="state-dot"></span>Digital interview</div>
-            <h2>UKCD Digital Suitability Interview</h2>
+            <h2>UKCD Digital Interview</h2>
             <p>This short recorded interview helps us understand your study plans, programme motivation, and readiness for your chosen course.</p>
           </div>
           <div class="hero-bottom">
@@ -874,6 +874,10 @@
       recordDestination: null,
       microphoneSource: null,
       microphoneGain: null,
+      ttsPlaybackBus: null,
+      ttsRecordBus: null,
+      ttsSilentSource: null,
+      activeTtsNodes: [],
       currentTtsSource: null,
       recorder: null,
       chunks: [],
@@ -1052,6 +1056,30 @@
         state.microphoneSource.connect(state.microphoneGain);
         state.microphoneGain.connect(state.recordDestination);
 
+        // Permanent interviewer-audio buses are connected BEFORE MediaRecorder starts.
+        // This avoids some browsers dropping interviewer audio when a source is connected later.
+        state.ttsPlaybackBus = state.audioContext.createGain();
+        state.ttsPlaybackBus.gain.value = 0.95;
+        state.ttsPlaybackBus.connect(state.audioContext.destination);
+
+        state.ttsRecordBus = state.audioContext.createGain();
+        state.ttsRecordBus.gain.value = 1.15;
+        state.ttsRecordBus.connect(state.recordDestination);
+
+        // Keep the TTS record path alive with a silent source for the full session.
+        try {
+          const silentGain = state.audioContext.createGain();
+          silentGain.gain.value = 0.00001;
+          const silentSource = state.audioContext.createConstantSource();
+          silentSource.offset.value = 0;
+          silentSource.connect(silentGain);
+          silentGain.connect(state.ttsRecordBus);
+          silentSource.start();
+          state.ttsSilentSource = silentSource;
+        } catch (silentErr) {
+          debug('Silent TTS bus warning: ' + silentErr.message);
+        }
+
         const finalStream = new MediaStream();
         state.stream.getVideoTracks().forEach(track => finalStream.addTrack(track));
         const mixedAudioTrack = state.recordDestination.stream.getAudioTracks()[0];
@@ -1220,25 +1248,25 @@
           const source = state.audioContext.createBufferSource();
           source.buffer = audioBuffer;
 
-          const playbackGain = state.audioContext.createGain();
-          playbackGain.gain.value = 0.95;
+          if (!state.ttsPlaybackBus || !state.ttsRecordBus) {
+            throw new Error('Interviewer audio buses are not ready.');
+          }
 
-          const recordGain = state.audioContext.createGain();
-          recordGain.gain.value = 0.95;
-
-          source.connect(playbackGain);
-          playbackGain.connect(state.audioContext.destination);
-
-          source.connect(recordGain);
-          recordGain.connect(state.recordDestination);
+          // Connect the same Groq TTS audio to speaker playback and to the recording mix.
+          // Keep node references until playback ends so the browser cannot garbage-collect them early.
+          source.connect(state.ttsPlaybackBus);
+          source.connect(state.ttsRecordBus);
 
           state.currentTtsSource = source;
+          state.activeTtsNodes.push(source);
           source.onended = () => {
             if (state.currentTtsSource === source) state.currentTtsSource = null;
+            state.activeTtsNodes = state.activeTtsNodes.filter(node => node !== source);
+            try { source.disconnect(); } catch (e) {}
             resolve();
           };
           source.start(0);
-          debug('Interviewer audio playing and mixed into recording. Bytes: ' + (tts.byteLength || audioBytes.byteLength || 0));
+          debug('Groq interviewer audio playing through permanent mix bus. Bytes: ' + (tts.byteLength || audioBytes.byteLength || 0));
         } catch (err) {
           reject(err);
         }
