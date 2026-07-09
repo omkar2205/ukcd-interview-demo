@@ -877,6 +877,9 @@
       ttsPlaybackBus: null,
       ttsRecordBus: null,
       ttsSilentSource: null,
+      ttsAudioElement: null,
+      ttsElementSource: null,
+      ttsObjectUrl: null,
       activeTtsNodes: [],
       currentTtsSource: null,
       recorder: null,
@@ -1057,27 +1060,46 @@
         state.microphoneGain.connect(state.recordDestination);
 
         // Permanent interviewer-audio buses are connected BEFORE MediaRecorder starts.
-        // This avoids some browsers dropping interviewer audio when a source is connected later.
+        // v13 uses a persistent HTMLAudioElement source. The element stays connected
+        // to both the speakers and the recording mix for the full session, and we only
+        // swap its source file for each Groq TTS question. This is more reliable than
+        // connecting short-lived BufferSource nodes after recording has already started.
         state.ttsPlaybackBus = state.audioContext.createGain();
         state.ttsPlaybackBus.gain.value = 0.95;
         state.ttsPlaybackBus.connect(state.audioContext.destination);
 
         state.ttsRecordBus = state.audioContext.createGain();
-        state.ttsRecordBus.gain.value = 1.15;
+        state.ttsRecordBus.gain.value = 1.25;
         state.ttsRecordBus.connect(state.recordDestination);
 
-        // Keep the TTS record path alive with a silent source for the full session.
+        if (!state.ttsAudioElement) {
+          state.ttsAudioElement = new Audio();
+          state.ttsAudioElement.preload = 'auto';
+          state.ttsAudioElement.crossOrigin = 'anonymous';
+          state.ttsAudioElement.playsInline = true;
+          state.ttsAudioElement.controls = false;
+          state.ttsAudioElement.style.display = 'none';
+          document.body.appendChild(state.ttsAudioElement);
+        }
+
+        if (!state.ttsElementSource) {
+          state.ttsElementSource = state.audioContext.createMediaElementSource(state.ttsAudioElement);
+        }
+        state.ttsElementSource.connect(state.ttsPlaybackBus);
+        state.ttsElementSource.connect(state.ttsRecordBus);
+
+        // Keep the record path active for the whole session.
         try {
           const silentGain = state.audioContext.createGain();
           silentGain.gain.value = 0.00001;
           const silentSource = state.audioContext.createConstantSource();
           silentSource.offset.value = 0;
           silentSource.connect(silentGain);
-          silentGain.connect(state.ttsRecordBus);
+          silentGain.connect(state.recordDestination);
           silentSource.start();
           state.ttsSilentSource = silentSource;
         } catch (silentErr) {
-          debug('Silent TTS bus warning: ' + silentErr.message);
+          debug('Silent mixer warning: ' + silentErr.message);
         }
 
         const finalStream = new MediaStream();
@@ -1234,42 +1256,65 @@
     async function playQuestionAudio(question) {
       if (!state.audioContext || !state.recordDestination) throw new Error('Audio mixer is not available.');
       if (state.audioContext.state === 'suspended') await state.audioContext.resume();
+      if (!state.ttsAudioElement || !state.ttsElementSource) throw new Error('Interviewer audio element is not ready.');
 
       const tts = await getQuestionAudioFromBackend(question);
-      const audioBytes = base64ToArrayBuffer(tts.audioBase64);
-      const audioBuffer = await decodeAudioBuffer(audioBytes);
+      const audioBlob = base64ToBlob(tts.audioBase64, tts.mimeType || 'audio/wav');
+      const objectUrl = URL.createObjectURL(audioBlob);
+
+      if (state.ttsObjectUrl) {
+        try { URL.revokeObjectURL(state.ttsObjectUrl); } catch (e) {}
+      }
+      state.ttsObjectUrl = objectUrl;
 
       await new Promise((resolve, reject) => {
-        try {
-          if (state.currentTtsSource) {
-            try { state.currentTtsSource.stop(); } catch (e) {}
-          }
+        const audio = state.ttsAudioElement;
+        let done = false;
 
-          const source = state.audioContext.createBufferSource();
-          source.buffer = audioBuffer;
+        const cleanup = () => {
+          audio.onended = null;
+          audio.onerror = null;
+          audio.oncanplaythrough = null;
+          audio.onloadeddata = null;
+        };
 
-          if (!state.ttsPlaybackBus || !state.ttsRecordBus) {
-            throw new Error('Interviewer audio buses are not ready.');
-          }
+        const finish = () => {
+          if (done) return;
+          done = true;
+          cleanup();
+          resolve();
+        };
 
-          // Connect the same Groq TTS audio to speaker playback and to the recording mix.
-          // Keep node references until playback ends so the browser cannot garbage-collect them early.
-          source.connect(state.ttsPlaybackBus);
-          source.connect(state.ttsRecordBus);
+        const fail = () => {
+          if (done) return;
+          done = true;
+          cleanup();
+          reject(new Error('Interviewer audio playback failed.'));
+        };
 
-          state.currentTtsSource = source;
-          state.activeTtsNodes.push(source);
-          source.onended = () => {
-            if (state.currentTtsSource === source) state.currentTtsSource = null;
-            state.activeTtsNodes = state.activeTtsNodes.filter(node => node !== source);
-            try { source.disconnect(); } catch (e) {}
-            resolve();
-          };
-          source.start(0);
-          debug('Groq interviewer audio playing through permanent mix bus. Bytes: ' + (tts.byteLength || audioBytes.byteLength || 0));
-        } catch (err) {
-          reject(err);
+        audio.onended = finish;
+        audio.onerror = fail;
+        audio.src = objectUrl;
+        audio.currentTime = 0;
+        audio.volume = 1;
+
+        // The persistent MediaElementSource is already connected to speaker playback
+        // and to the recording destination. Playing this element is therefore enough
+        // for the applicant to hear it and for MediaRecorder to capture it.
+        const playPromise = audio.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.then(() => {
+            debug('Groq interviewer audio routed via persistent media element. Bytes: ' + (tts.byteLength || audioBlob.size || 0));
+          }).catch(err => {
+            cleanup();
+            reject(err);
+          });
         }
+
+        // Failsafe: resolve after the likely duration if the browser never fires ended.
+        setTimeout(() => {
+          if (!done && audio.duration && audio.currentTime >= Math.max(0, audio.duration - 0.2)) finish();
+        }, Math.max(5000, question.length * 120));
       });
     }
 
@@ -1303,6 +1348,11 @@
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       return bytes.buffer;
+    }
+
+    function base64ToBlob(base64, mimeType) {
+      const buffer = base64ToArrayBuffer(base64);
+      return new Blob([buffer], { type: mimeType || 'audio/wav' });
     }
 
     function browserSpeechFallback(question) {
