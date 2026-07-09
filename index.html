@@ -1325,7 +1325,8 @@
           responses: state.responses.length ? state.responses : [{ question: state.currentQuestion || 'Interview ended', answer: 'Interview ended before an answer was captured.' }],
           summary,
           videoBase64: videoPack.base64,
-          videoMimeType: state.recordedBlob.type || 'video/webm',
+          videoMimeType: normaliseVideoMimeType(state.recordedBlob.type || 'video/webm'),
+          videoOriginalMimeType: state.recordedBlob.type || 'video/webm',
           videoSizeBytes: state.recordedBlob.size || 0,
           recordingDebug: DEBUG ? {
             chunks: state.chunks.length,
@@ -1403,15 +1404,25 @@
         const reader = new FileReader();
         reader.onloadend = () => {
           const dataUrl = String(reader.result || '');
-          const comma = dataUrl.indexOf(',');
+          // Important: MP4 data URLs can contain a comma inside the codecs section,
+          // for example: data:video/mp4;codecs=avc1...,mp4a...;base64,AAAA...
+          // Use the LAST comma so only the actual base64 payload is extracted.
+          const comma = dataUrl.lastIndexOf(',');
           resolve({
             base64: comma === -1 ? '' : dataUrl.slice(comma + 1),
-            prefix: comma === -1 ? dataUrl.slice(0, 80) : dataUrl.slice(0, comma + 1)
+            prefix: comma === -1 ? dataUrl.slice(0, 120) : dataUrl.slice(0, comma + 1)
           });
         };
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
+    }
+
+    function normaliseVideoMimeType(mimeType) {
+      const value = String(mimeType || '').toLowerCase();
+      if (value.includes('mp4')) return 'video/mp4';
+      if (value.includes('webm')) return 'video/webm';
+      return 'application/octet-stream';
     }
 
     async function submitInterview(payload) {
