@@ -16,32 +16,32 @@ const VOICE_LEVEL_THRESHOLD = 0.026;
 export const INTERVIEW_STAGES = [
   {
     key: 'Introduction',
-    prompt: 'Confirm identity and chosen programme. Do not mention any institution name unless explicitly provided by the applicant.',
+    prompt: 'Ask a warm opening question asking the applicant to introduce themselves and confirm their chosen programme. Do not mention any institution name unless explicitly provided by the applicant.',
     fallbackQuestion: 'Please introduce yourself and confirm the programme you are applying for.'
   },
   {
     key: 'Programme Motivation',
-    prompt: 'Explore why the applicant chose this programme. Do not mention UKCD as an institution.',
+    prompt: 'Ask a natural programme motivation question. The wording may vary, but it must focus only on the chosen programme, not the institution.',
     fallbackQuestion: 'Why have you chosen this programme?'
   },
   {
     key: 'Academic or Work Background',
-    prompt: 'Explore prior study or work experience linked to the chosen programme.',
+    prompt: 'Ask how the applicant’s previous study, work, skills, or experience connects to the programme. Use friendly professional wording.',
     fallbackQuestion: 'How does your previous study or work experience relate to this programme?'
   },
   {
     key: 'Career Goals',
-    prompt: 'Explore future career goals after completing the programme.',
+    prompt: 'Ask a career-goals question linking the programme to future plans. Allow natural wording and mild variation.',
     fallbackQuestion: 'How will this programme support your future career goals?'
   },
   {
     key: 'Funding and Study Preparedness',
-    prompt: 'Explore funding awareness and practical study preparedness.',
+    prompt: 'Ask about funding awareness, preparation, time management, or practical readiness. Keep it student-friendly and professional.',
     fallbackQuestion: 'How are you planning to fund your studies and living costs?'
   },
   {
     key: 'UK Study Awareness',
-    prompt: 'Explore understanding of UK study expectations and student responsibilities.',
+    prompt: 'Ask about understanding of UK study expectations, independent learning, student responsibilities, or adapting to a new academic environment.',
     fallbackQuestion: 'What do you understand about studying in the UK and managing your responsibilities as a student?'
   }
 ];
@@ -128,13 +128,16 @@ export class InterviewController {
       questionNumber: this.stageIndex + 1,
       responses: this.responses,
       stage: stage.key,
-      stagePrompt: stage.prompt
+      stagePrompt: stage.prompt,
+      fallbackQuestion: stage.fallbackQuestion,
+      creativity: 'moderate'
     };
 
     debug('Next question request', {
       questionNumber: request.questionNumber,
       stage: request.stage,
-      responsesCount: request.responses.length
+      responsesCount: request.responses.length,
+      creativity: request.creativity
     });
 
     try {
@@ -440,10 +443,10 @@ export class InterviewController {
 
 function isSafeApplicantQuestion(question, student = {}, previousResponses = []) {
   const text = String(question || '').trim();
-  if (text.length < 12 || text.length > 220) return false;
+  if (text.length < 10 || text.length > 280) return false;
 
   const lower = text.toLowerCase();
-  const forbidden = /\b(?:ai|groq|google\s+drive|google\s+sheets|api|backend|base64|developer)\b/i;
+  const forbidden = /\b(?:ai|groq|google\s+drive|google\s+sheets|api|backend|base64|developer|score|scoring model)\b/i;
   if (forbidden.test(text)) return false;
 
   // UKCD is the interview brand/platform, not the applicant's institution.
