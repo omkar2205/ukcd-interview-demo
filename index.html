@@ -703,7 +703,7 @@
   <main class="shell">
     <header class="topbar">
       <div class="brand">
-        <div class="logo">👩🏻‍💻</div>
+        <div class="logo">🧑🏻‍💻UKCD</div>
         <div>
           <h1>UKCD Digital Suitability Interview</h1>
           <p id="topSubtext">Applicant interview session</p>
@@ -869,6 +869,12 @@
     const state = {
       student: {},
       stream: null,
+      mixedStream: null,
+      audioContext: null,
+      recordDestination: null,
+      microphoneSource: null,
+      microphoneGain: null,
+      currentTtsSource: null,
       recorder: null,
       chunks: [],
       recordedBlob: null,
@@ -1008,6 +1014,7 @@
         state.retryCountForQuestion = 0;
         state.startedAt = Date.now();
         state.timerHandle = setInterval(updateTimer, 1000);
+        await setupAudioMixer();
         startFullSessionRecording();
         initialiseSpeechRecognition();
         startRecognitionLoop();
@@ -1021,6 +1028,44 @@
       }
     }
 
+    async function setupAudioMixer() {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      state.mixedStream = state.stream;
+
+      if (!AudioContextClass) {
+        debug('Web Audio API unavailable. Recording will use camera/microphone only.');
+        return;
+      }
+
+      try {
+        if (!state.audioContext || state.audioContext.state === 'closed') {
+          state.audioContext = new AudioContextClass();
+        }
+        if (state.audioContext.state === 'suspended') {
+          await state.audioContext.resume();
+        }
+
+        state.recordDestination = state.audioContext.createMediaStreamDestination();
+        state.microphoneSource = state.audioContext.createMediaStreamSource(state.stream);
+        state.microphoneGain = state.audioContext.createGain();
+        state.microphoneGain.gain.value = 1.0;
+        state.microphoneSource.connect(state.microphoneGain);
+        state.microphoneGain.connect(state.recordDestination);
+
+        const finalStream = new MediaStream();
+        state.stream.getVideoTracks().forEach(track => finalStream.addTrack(track));
+        const mixedAudioTrack = state.recordDestination.stream.getAudioTracks()[0];
+        if (mixedAudioTrack) finalStream.addTrack(mixedAudioTrack);
+        else state.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
+        state.mixedStream = finalStream;
+
+        debug('Audio mixer ready. Final stream tracks: ' + state.mixedStream.getTracks().map(track => track.kind + ':' + track.readyState).join(', '));
+      } catch (err) {
+        debug('Audio mixer setup warning: ' + err.message);
+        state.mixedStream = state.stream;
+      }
+    }
+
     function startFullSessionRecording() {
       if (!window.MediaRecorder) throw new Error('MediaRecorder is not supported in this browser.');
       const mimeType = pickRecordingType();
@@ -1029,7 +1074,8 @@
       state.chunks = [];
       state.totalRecordedBytes = 0;
       state.recordedBlob = null;
-      state.recorder = new MediaRecorder(state.stream, options);
+      const recordingStream = state.mixedStream || state.stream;
+      state.recorder = new MediaRecorder(recordingStream, options);
 
       state.recorder.ondataavailable = event => {
         if (event.data && event.data.size > 0) {
@@ -1044,7 +1090,7 @@
         try { if (state.recorder && state.recorder.state === 'recording') state.recorder.requestData(); }
         catch (err) { debug('requestData warning: ' + err.message); }
       }, 2500);
-      debug('Recording started with MIME: ' + (state.recorder.mimeType || mimeType || 'browser default'));
+      debug('Recording started with MIME: ' + (state.recorder.mimeType || mimeType || 'browser default') + '. Audio mode: mixed interviewer + applicant.');
     }
 
     function pickRecordingType() {
@@ -1141,33 +1187,111 @@
       $('statusText').textContent = 'Preparing question...';
     }
 
-    function speakQuestion(question) {
+    async function speakQuestion(question) {
+      state.phase = 'speaking';
+      $('statusText').textContent = 'Question being asked...';
+      $('listeningBars').classList.add('hidden');
+      resetAnswerCapture();
+
+      try {
+        await playQuestionAudio(question);
+      } catch (err) {
+        debug('Groq interviewer audio warning: ' + (err && err.message ? err.message : err));
+        await browserSpeechFallback(question);
+      }
+
+      if (state.phase === 'speaking') startListeningWindow();
+    }
+
+    async function playQuestionAudio(question) {
+      if (!state.audioContext || !state.recordDestination) throw new Error('Audio mixer is not available.');
+      if (state.audioContext.state === 'suspended') await state.audioContext.resume();
+
+      const tts = await getQuestionAudioFromBackend(question);
+      const audioBytes = base64ToArrayBuffer(tts.audioBase64);
+      const audioBuffer = await decodeAudioBuffer(audioBytes);
+
+      await new Promise((resolve, reject) => {
+        try {
+          if (state.currentTtsSource) {
+            try { state.currentTtsSource.stop(); } catch (e) {}
+          }
+
+          const source = state.audioContext.createBufferSource();
+          source.buffer = audioBuffer;
+
+          const playbackGain = state.audioContext.createGain();
+          playbackGain.gain.value = 0.95;
+
+          const recordGain = state.audioContext.createGain();
+          recordGain.gain.value = 0.95;
+
+          source.connect(playbackGain);
+          playbackGain.connect(state.audioContext.destination);
+
+          source.connect(recordGain);
+          recordGain.connect(state.recordDestination);
+
+          state.currentTtsSource = source;
+          source.onended = () => {
+            if (state.currentTtsSource === source) state.currentTtsSource = null;
+            resolve();
+          };
+          source.start(0);
+          debug('Interviewer audio playing and mixed into recording. Bytes: ' + (tts.byteLength || audioBytes.byteLength || 0));
+        } catch (err) {
+          reject(err);
+        }
+      });
+    }
+
+    function decodeAudioBuffer(arrayBuffer) {
+      return new Promise((resolve, reject) => {
+        try {
+          const copy = arrayBuffer.slice(0);
+          const maybePromise = state.audioContext.decodeAudioData(copy, resolve, reject);
+          if (maybePromise && typeof maybePromise.then === 'function') maybePromise.then(resolve).catch(reject);
+        } catch (err) {
+          reject(err);
+        }
+      });
+    }
+
+    async function getQuestionAudioFromBackend(question) {
+      const result = await jsonpRequest(UKCD_BACKEND_WEB_APP_URL, {
+        action: 'tts',
+        text: question
+      }, 26000);
+
+      if (!result || !result.ok || !result.audioBase64) {
+        throw new Error(result && result.message ? result.message : 'No interviewer audio received.');
+      }
+      return result;
+    }
+
+    function base64ToArrayBuffer(base64) {
+      const clean = String(base64 || '').replace(/\s/g, '');
+      const binary = atob(clean);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes.buffer;
+    }
+
+    function browserSpeechFallback(question) {
       return new Promise(resolve => {
-        state.phase = 'speaking';
-        $('statusText').textContent = 'Question being asked...';
-        $('listeningBars').classList.add('hidden');
-        resetAnswerCapture();
-
-        const beginListening = () => {
-          if (state.phase === 'speaking') startListeningWindow();
-          resolve();
-        };
-
         try {
           window.speechSynthesis.cancel();
           const utterance = new SpeechSynthesisUtterance(question);
           utterance.lang = 'en-GB';
           utterance.rate = 0.92;
           utterance.pitch = 1;
-          utterance.onend = beginListening;
-          utterance.onerror = () => beginListening();
+          utterance.onend = resolve;
+          utterance.onerror = resolve;
           window.speechSynthesis.speak(utterance);
-          setTimeout(() => {
-            if (state.phase === 'speaking') beginListening();
-          }, Math.max(5000, question.length * 95));
+          setTimeout(resolve, Math.max(5000, question.length * 95));
         } catch (err) {
-          debug('TTS warning: ' + err.message);
-          beginListening();
+          debug('Browser speech fallback warning: ' + err.message);
+          resolve();
         }
       });
     }
@@ -1310,6 +1434,7 @@
       if (state.phase === 'submitting' || state.phase === 'ended') return;
       state.phase = 'submitting';
       window.speechSynthesis.cancel();
+      if (state.currentTtsSource) { try { state.currentTtsSource.stop(); } catch (e) {} state.currentTtsSource = null; }
       if (state.silenceTimer) clearInterval(state.silenceTimer);
       if (state.timerHandle) clearInterval(state.timerHandle);
       if (state.recordingWatchdog) clearInterval(state.recordingWatchdog);
@@ -1396,7 +1521,12 @@
     }
 
     function stopTracks() {
-      if (state.stream) state.stream.getTracks().forEach(track => track.stop());
+      const tracks = new Set();
+      if (state.stream) state.stream.getTracks().forEach(track => tracks.add(track));
+      if (state.mixedStream) state.mixedStream.getTracks().forEach(track => tracks.add(track));
+      tracks.forEach(track => {
+        try { track.stop(); } catch (e) {}
+      });
     }
 
     function blobToBase64Pack(blob) {
