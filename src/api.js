@@ -28,12 +28,18 @@ export class InterviewApi {
       action: 'nextQuestion',
       student: payload.student,
       questionNumber: payload.questionNumber,
-      responses: payload.responses
+      responses: payload.responses || [],
+      stage: payload.stage || '',
+      stagePrompt: payload.stagePrompt || '',
+      fallbackQuestion: payload.fallbackQuestion || '',
+      creativity: payload.creativity || 'moderate'
     };
 
     this.debug('Requesting next question', {
       questionNumber: requestBody.questionNumber,
-      responseCount: requestBody.responses.length
+      stage: requestBody.stage,
+      responseCount: requestBody.responses.length,
+      creativity: requestBody.creativity
     });
 
     const result = await postJson(SERVICE_URL, requestBody, 14000);
