@@ -2,43 +2,47 @@ import { base64ToBlob } from './api.js';
 import { blobToUploadPack, normaliseVideoMimeType } from './recorder.js';
 import {
   $, DEBUG, debug, markQuestionComplete, renderQuestion, setStatus,
-  showCompletion, showScreen, showToast, updateTimer
+  showCompletion, showScreen, updateTimer
 } from './ui.js';
 
 const SILENCE_MS = 3000;
 const MIN_ANSWER_MS = 4500;
 const MAX_ANSWER_MS = 65000;
 const MAX_WAIT_FOR_VOICE_MS = 14000;
+const NO_RESPONSE_AUTO_ADVANCE_MS = 24000;
 const MIN_TRANSCRIPT_CHARS = 10;
 const VOICE_LEVEL_THRESHOLD = 0.026;
 
 export const INTERVIEW_STAGES = [
-  // Fixed stages keep the interview anchored to UKCD and reduce the chance of
-  // generated questions introducing unrelated institution names.
   {
     key: 'Introduction',
-    prompt: 'Confirm identity, programme, and overall motivation. Use only UKCD as the institution name.',
-    fallbackQuestion: 'Please introduce yourself and confirm the programme you are applying for at UKCD.'
-  },
-  {
-    key: 'Academic Preparation',
-    prompt: 'Explore prior study or work experience linked to the chosen programme. Use only UKCD as the institution name.',
-    fallbackQuestion: 'How have your previous studies or work experience prepared you for this programme?'
+    prompt: 'Confirm identity and chosen programme. Do not mention any institution name unless explicitly provided by the applicant.',
+    fallbackQuestion: 'Please introduce yourself and confirm the programme you are applying for.'
   },
   {
     key: 'Programme Motivation',
-    prompt: 'Explore why the applicant chose this programme and UKCD. Use only UKCD as the institution name.',
-    fallbackQuestion: 'Why have you chosen this programme at UKCD, and what interests you most about it?'
+    prompt: 'Explore why the applicant chose this programme. Do not mention UKCD as an institution.',
+    fallbackQuestion: 'Why have you chosen this programme?'
   },
   {
-    key: 'Study Readiness',
-    prompt: 'Explore understanding of UK study expectations, independent learning, and practical readiness. Use only UKCD as the institution name.',
-    fallbackQuestion: 'What do you understand about studying in the UK, including independent learning and academic expectations?'
+    key: 'Academic or Work Background',
+    prompt: 'Explore prior study or work experience linked to the chosen programme.',
+    fallbackQuestion: 'How does your previous study or work experience relate to this programme?'
   },
   {
-    key: 'Plans and Goals',
-    prompt: 'Explore funding awareness and career plans after completing the programme. Use only UKCD as the institution name.',
-    fallbackQuestion: 'How are you planning to fund your studies, and what are your career plans after completing the programme?'
+    key: 'Career Goals',
+    prompt: 'Explore future career goals after completing the programme.',
+    fallbackQuestion: 'How will this programme support your future career goals?'
+  },
+  {
+    key: 'Funding and Study Preparedness',
+    prompt: 'Explore funding awareness and practical study preparedness.',
+    fallbackQuestion: 'How are you planning to fund your studies and living costs?'
+  },
+  {
+    key: 'UK Study Awareness',
+    prompt: 'Explore understanding of UK study expectations and student responsibilities.',
+    fallbackQuestion: 'What do you understand about studying in the UK and managing your responsibilities as a student?'
   }
 ];
 
@@ -63,7 +67,6 @@ export class InterviewController {
     this.lastVoiceAt = null;
     this.heardVoice = false;
     this.answerTimer = null;
-    this.retryCountForQuestion = 0;
     this.completingAnswer = false;
     this.currentAudio = null;
   }
@@ -79,7 +82,7 @@ export class InterviewController {
     this.startRecognitionLoop();
     showScreen('interviewScreen');
     this.recorder.attachPreview($('interviewPreview'));
-    await this.nextQuestion('', '');
+    await this.nextQuestion();
   }
 
   async replayQuestion() {
@@ -95,19 +98,19 @@ export class InterviewController {
     await this.finish('Ended by applicant');
   }
 
-  async nextQuestion(previousQuestion, answer) {
+  async nextQuestion() {
     this.stageIndex += 1;
     const stage = INTERVIEW_STAGES[this.stageIndex];
+
     if (!stage) {
       await this.finish('Completed');
       return;
     }
 
     setStatus('Preparing the next question...', { icon: 'loader-circle' });
-    const question = await this.loadStageQuestion(stage, previousQuestion, answer);
+    const question = await this.loadStageQuestion(stage);
     this.currentQuestion = question;
     this.currentFocus = stage.key;
-    this.retryCountForQuestion = 0;
 
     renderQuestion({
       question,
@@ -119,19 +122,46 @@ export class InterviewController {
     await this.speakQuestion(question);
   }
 
-  async loadStageQuestion(stage, previousQuestion, answer) {
+  async loadStageQuestion(stage) {
+    const request = {
+      student: this.student,
+      questionNumber: this.stageIndex + 1,
+      responses: this.responses,
+      stage: stage.key,
+      stagePrompt: stage.prompt
+    };
+
+    debug('Next question request', {
+      questionNumber: request.questionNumber,
+      stage: request.stage,
+      responsesCount: request.responses.length
+    });
+
     try {
-      const result = await this.api.getNextQuestion({
-        student: this.student,
-        questionNumber: this.stageIndex + 1,
-        responses: this.responses
+      const result = await this.api.getNextQuestion(request);
+      const returnedQuestion = String(result.question || '').trim();
+
+      debug('Next question response', {
+        questionNumber: request.questionNumber,
+        stage: request.stage,
+        returnedQuestion,
+        focusArea: result.focusArea || ''
       });
 
-      if (isSafeApplicantQuestion(result.question)) return result.question;
-      debug('Question rejected by client guardrail', result.question);
+      if (isSafeApplicantQuestion(returnedQuestion, this.student, this.responses)) {
+        return returnedQuestion;
+      }
+
+      debug('Question rejected by client guardrail; using stage fallback', returnedQuestion);
     } catch (error) {
-      debug('Question service fallback', error.message);
+      debug('Question service fallback', error.stack || error.message);
     }
+
+    debug('Using fallback question', {
+      questionNumber: this.stageIndex + 1,
+      stage: stage.key,
+      question: stage.fallbackQuestion
+    });
 
     return stage.fallbackQuestion;
   }
@@ -144,7 +174,7 @@ export class InterviewController {
     try {
       await this.playQuestionAudio(question);
     } catch (error) {
-      debug('Question audio fallback', error.message);
+      debug('Question audio fallback', error.stack || error.message);
       await this.browserSpeechFallback(question);
     }
 
@@ -199,6 +229,7 @@ export class InterviewController {
   initialiseSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     this.recognitionSupported = !!SpeechRecognition;
+
     if (!SpeechRecognition) {
       debug('Speech recognition unavailable; continuing with microphone activity timing.');
       return;
@@ -218,12 +249,15 @@ export class InterviewController {
     recognition.onresult = (event) => {
       if (this.phase !== 'listening') return;
       let interim = '';
+
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const transcript = event.results[i][0].transcript || '';
         if (event.results[i].isFinal) this.answerFinal += `${transcript} `;
         else interim += transcript;
       }
+
       this.answerInterim = interim;
+
       if (this.getCurrentTranscript().trim()) {
         this.heardVoice = true;
         this.lastVoiceAt = Date.now();
@@ -243,6 +277,7 @@ export class InterviewController {
 
   startRecognitionLoop() {
     if (!this.recognitionSupported || !this.recognition || this.recognitionActive) return;
+
     try {
       this.recognition.start();
     } catch (error) {
@@ -269,6 +304,7 @@ export class InterviewController {
 
     this.answerTimer = window.setInterval(() => {
       if (this.phase !== 'listening' || this.completingAnswer) return;
+
       const now = Date.now();
       const elapsed = now - this.answerStartedAt;
       const level = this.recorder.getVoiceLevel();
@@ -281,6 +317,7 @@ export class InterviewController {
       }
 
       const silence = now - this.lastVoiceAt;
+
       if ((hasTranscript || this.heardVoice) && elapsed >= MIN_ANSWER_MS && silence >= SILENCE_MS) {
         this.completeCurrentAnswer('silence');
         return;
@@ -288,6 +325,11 @@ export class InterviewController {
 
       if (!this.heardVoice && elapsed >= MAX_WAIT_FOR_VOICE_MS) {
         setStatus('Please answer clearly now.', { listening: true, icon: 'audio-lines' });
+      }
+
+      if (!this.heardVoice && elapsed >= NO_RESPONSE_AUTO_ADVANCE_MS) {
+        this.completeCurrentAnswer('no-response-timeout');
+        return;
       }
 
       if (elapsed >= MAX_ANSWER_MS) this.completeCurrentAnswer('max-time');
@@ -305,18 +347,13 @@ export class InterviewController {
     setStatus('Answer captured.', { icon: 'check' });
 
     let answer = this.getCurrentTranscript();
+
     if (!answer || answer.length < MIN_TRANSCRIPT_CHARS) {
-      if (this.recognitionSupported && this.retryCountForQuestion < 1 && !this.heardVoice) {
-        this.retryCountForQuestion += 1;
-        setStatus('We could not clearly hear a response. The question will be played again.', { icon: 'rotate-ccw' });
-        await wait(1400);
-        await this.replayQuestion();
-        return;
-      }
       answer = 'Spoken response captured in the recorded interview.';
     }
 
     this.responses.push({
+      questionNumber: this.stageIndex + 1,
       question: this.currentQuestion,
       answer,
       focusArea: this.currentFocus,
@@ -324,13 +361,22 @@ export class InterviewController {
       captureReason: reason
     });
 
+    debug('Answer stored', {
+      questionNumber: this.stageIndex + 1,
+      responsesCount: this.responses.length,
+      stage: this.currentFocus,
+      captureReason: reason,
+      answerPreview: answer.slice(0, 120)
+    });
+
     markQuestionComplete(this.stageIndex + 1, INTERVIEW_STAGES.length);
     await wait(900);
-    await this.nextQuestion(this.currentQuestion, answer);
+    await this.nextQuestion();
   }
 
   async finish(status) {
     if (this.phase === 'finalising' || this.phase === 'ended') return;
+
     this.phase = 'finalising';
     window.clearInterval(this.answerTimer);
     window.clearInterval(this.timerHandle);
@@ -356,12 +402,14 @@ export class InterviewController {
 
   buildSubmissionPayload(status, blob, uploadPack) {
     const responses = this.responses.length ? this.responses : [{
+      questionNumber: this.stageIndex + 1,
       question: this.currentQuestion || 'Interview ended',
       answer: 'Interview ended before a clear spoken response was captured.',
       focusArea: this.currentFocus || 'Interview'
     }];
 
     return {
+      action: 'submitInterview',
       student: this.student,
       responses,
       summary: buildReviewSummary(status, responses),
@@ -390,20 +438,41 @@ export class InterviewController {
   }
 }
 
-function isSafeApplicantQuestion(question) {
+function isSafeApplicantQuestion(question, student = {}, previousResponses = []) {
   const text = String(question || '').trim();
-  if (text.length < 12 || text.length > 360) return false;
+  if (text.length < 12 || text.length > 220) return false;
+
+  const lower = text.toLowerCase();
   const forbidden = /\b(?:ai|groq|google\s+drive|google\s+sheets|api|backend|base64|developer)\b/i;
   if (forbidden.test(text)) return false;
 
-  const namedInstitution = /\b(?:university|college|institute|academy|school)\s+of\b/i;
-  if (namedInstitution.test(text) && !/\bUKCD\b/.test(text)) return false;
+  // UKCD is the interview brand/platform, not the applicant's institution.
+  if (/\bukcd\b/i.test(text)) return false;
+
+  const explicitInstitution = String(
+    student.institution ||
+    student.university ||
+    student.targetUniversity ||
+    student.chosenInstitution ||
+    ''
+  ).trim();
+
+  const knownInstitutionLeak = /\b(?:university of kent|kingston university|canterbury christ church|cccu)\b/i;
+  if (knownInstitutionLeak.test(text)) return false;
+
+  const institutionWording = /\b(?:chosen university|this university|the university|chosen institution|this institution)\b/i;
+  if (!explicitInstitution && institutionWording.test(text)) return false;
+
+  const previousQuestions = previousResponses.map((response) => String(response.question || '').trim().toLowerCase()).filter(Boolean);
+  if (previousQuestions.includes(lower)) return false;
+
   return true;
 }
 
 function buildReviewSummary(status, responses) {
   const answerText = responses.map((response) => response.answer || '').join(' ');
   const wordCount = answerText.trim() ? answerText.trim().split(/\s+/).length : 0;
+
   return [
     `Interview status: ${status}`,
     `Questions answered: ${responses.length}`,
