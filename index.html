@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UKCD AI Interview Demo v5</title>
+  <title>UKCD AI Interview Demo v7</title>
   <style>
     :root {
       --navy: #081b33;
@@ -1234,10 +1235,63 @@
 
 
 
+    function getSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return null;
+
+      if (!state.recognition) {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-GB';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = event => {
+          let interim = '';
+          let finalText = state.voiceFinalText || '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0] && event.results[i][0].transcript
+              ? event.results[i][0].transcript
+              : '';
+            if (event.results[i].isFinal) finalText += transcript + ' ';
+            else interim += transcript;
+          }
+
+          state.voiceFinalText = finalText;
+          const base = state.voiceBaseText || '';
+          const combined = (base + ' ' + finalText + ' ' + interim).replace(/\s+/g, ' ').trim();
+          el('answerInput').value = combined;
+          updateCharCount();
+
+          if (interim || finalText) {
+            el('speechStatus').innerHTML = '<span class="pulse-dot"></span>Listening... transcript is being captured';
+          }
+        };
+
+        recognition.onerror = event => {
+          console.warn('Speech recognition warning:', event.error, event.message || '');
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            showToast('Browser transcription is blocked. The voice is still being recorded in the interview video. You can type notes instead.');
+          } else {
+            showToast('Browser transcription paused. The voice is still being recorded in the interview video.');
+          }
+        };
+
+        recognition.onend = () => {
+          if (state.isListening) {
+            // Chrome sometimes stops recognition by itself after a short pause.
+            // Restart while the answer button still shows active.
+            try { recognition.start(); } catch (e) {}
+          }
+        };
+
+        state.recognition = recognition;
+      }
+      return state.recognition;
+    }
+
     function startVoiceAnswer() {
-      // This does NOT use browser speech recognition, so it will not ask for a
-      // separate microphone permission on every question. The microphone was
-      // already granted once when the full session recording started.
       try {
         if (window.speechSynthesis) window.speechSynthesis.cancel();
       } catch (e) {}
@@ -1246,12 +1300,26 @@
       state.isListening = true;
       state.voiceSegmentStartMs = Date.now() - state.startedAt;
       state.currentVoiceSegment = null;
+      state.voiceBaseText = el('answerInput').value.trim();
+      state.voiceFinalText = '';
 
       el('listenBtn').classList.add('hidden');
       el('stopListenBtn').classList.remove('hidden');
       el('speechStatus').classList.add('listening');
-      el('speechStatus').innerHTML = '<span class="pulse-dot"></span>Voice answer active - speak now. Audio is being saved in the video.';
-      showToast('Voice answer started. The student voice is being captured in the video recording.');
+      el('speechStatus').innerHTML = '<span class="pulse-dot"></span>Listening... please answer clearly';
+
+      const recognition = getSpeechRecognition();
+      if (recognition) {
+        try {
+          recognition.start();
+          showToast('Voice answer started. Speak clearly; your answer will be transcribed where supported.');
+        } catch (err) {
+          console.warn('Speech recognition start warning:', err);
+          showToast('Voice answer started. Browser transcription could not start, but the audio is still being recorded in the video.');
+        }
+      } else {
+        showToast('This browser does not support live transcription. The audio is still being recorded in the video. You can type notes if needed.');
+      }
     }
 
     function stopVoiceAnswer(silent) {
@@ -1260,25 +1328,26 @@
         return;
       }
 
+      state.isListening = false;
+      try {
+        if (state.recognition) state.recognition.stop();
+      } catch (e) {}
+
       const startMs = state.voiceSegmentStartMs || 0;
       const endMs = Date.now() - state.startedAt;
       state.currentVoiceSegment = { startMs, endMs };
-      state.isListening = false;
       state.voiceSegmentStartMs = null;
       setVoiceIdleStatus();
 
       const existing = el('answerInput').value.trim();
       if (!existing) {
-        el('answerInput').value = `Voice answer recorded in session video from ${formatTime(startMs)} to ${formatTime(endMs)}. No typed transcript was provided.`;
-      } else if (!/Voice answer recorded in session video/i.test(existing)) {
-        el('answerInput').value = `${existing}
-
-Voice answer recorded in session video from ${formatTime(startMs)} to ${formatTime(endMs)}.`;
+        // Do not show technical timestamps to the student. The timestamps are saved separately.
+        el('answerInput').value = 'Answer recorded by voice.';
       }
       updateCharCount();
 
       if (!silent) {
-        showToast('Voice answer stopped. The audio is inside the saved interview video.');
+        showToast('Answer stopped. Review the text if a transcript appeared, then submit the answer.');
       }
     }
 
@@ -1286,7 +1355,7 @@ Voice answer recorded in session video from ${formatTime(startMs)} to ${formatTi
       el('listenBtn').classList.remove('hidden');
       el('stopListenBtn').classList.add('hidden');
       el('speechStatus').classList.remove('listening');
-      el('speechStatus').innerHTML = '<span class="pulse-dot"></span>Voice answer not active';
+      el('speechStatus').innerHTML = '<span class="pulse-dot"></span>Ready for answer';
     }
 
     function formatTime(ms) {
@@ -1439,28 +1508,29 @@ Voice answer recorded in session video from ${formatTime(startMs)} to ${formatTi
       try {
         state.recordedBlob = await stopRecordingAndCamera();
         const summary = generateDemoSummary();
-        const videoDataUrl = await blobToDataUrl(state.recordedBlob);
+        const videoPack = await blobToBase64Pack(state.recordedBlob);
         const preparedSize = state.recordedBlob.size || 0;
 
-        el('resultBox').textContent = summary + '\n\nRecording size prepared for upload: ' + formatBytes(preparedSize) + '\nBase64/data URL length: ' + String(videoDataUrl || '').length;
+        el('resultBox').textContent = summary + '\n\nRecording size prepared for upload: ' + formatBytes(preparedSize) + '\nBase64 length: ' + String(videoPack.base64 || '').length;
         el('resultBox').classList.remove('hidden');
 
         const payload = {
           student: state.student,
           responses: state.responses,
           summary: summary,
-          videoDataUrl: videoDataUrl,
+          videoBase64: videoPack.base64,
           videoMimeType: state.recordedBlob.type || 'video/webm',
           videoSizeBytes: preparedSize,
           recordingDebug: {
             chunks: state.chunks ? state.chunks.length : 0,
             totalRecordedBytes: state.totalRecordedBytes || 0,
             recorderMimeType: state.recorder ? state.recorder.mimeType : '',
+            dataUrlPrefix: videoPack.prefix || '',
             tracks: state.stream ? state.stream.getTracks().map(t => ({ kind: t.kind, readyState: t.readyState, enabled: t.enabled })) : []
           }
         };
 
-        if (preparedSize < 1000 || String(videoDataUrl || '').length < 1500) {
+        if (preparedSize < 1000 || String(videoPack.base64 || '').length < 1500) {
           showToast('Recording is too small. I will still save the row, but Drive video may not upload. Check camera status and use Chrome/Edge.');
           console.warn('UKCD warning: prepared recording is too small:', preparedSize, state.recordedBlob, payload.recordingDebug);
         }
@@ -1526,10 +1596,21 @@ Voice answer recorded in session video from ${formatTime(startMs)} to ${formatTi
       }
     }
 
-    function blobToDataUrl(blob) {
+    function blobToBase64Pack(blob) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
+        reader.onloadend = () => {
+          const dataUrl = String(reader.result || '');
+          const comma = dataUrl.indexOf(',');
+          if (comma === -1) {
+            resolve({ base64: '', prefix: dataUrl.slice(0, 80) });
+            return;
+          }
+          resolve({
+            base64: dataUrl.slice(comma + 1),
+            prefix: dataUrl.slice(0, comma + 1)
+          });
+        };
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
