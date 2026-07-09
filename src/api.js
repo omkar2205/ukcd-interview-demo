@@ -24,18 +24,19 @@ export class InterviewApi {
   }
 
   async getNextQuestion(payload) {
-    const result = await jsonpRequest(SERVICE_URL, {
+    const requestBody = {
       action: 'nextQuestion',
-      student: JSON.stringify(payload.student),
-      responses: JSON.stringify(payload.responses),
-      currentQuestion: payload.currentQuestion || '',
-      answer: payload.answer || '',
-      currentIndex: payload.currentIndex,
-      stage: payload.stage,
-      stagePrompt: payload.stagePrompt,
-      fallbackQuestion: payload.fallbackQuestion,
-      fixedInstitution: 'UKCD'
-    }, 14000);
+      student: payload.student,
+      questionNumber: payload.questionNumber,
+      responses: payload.responses
+    };
+
+    this.debug('Requesting next question', {
+      questionNumber: requestBody.questionNumber,
+      responseCount: requestBody.responses.length
+    });
+
+    const result = await postJson(SERVICE_URL, requestBody, 14000);
 
     if (!result || !result.ok || !result.question) {
       throw new Error(result && result.message ? result.message : 'No question returned.');
@@ -111,4 +112,29 @@ function jsonpRequest(baseUrl, params, timeoutMs) {
       next();
     }
   });
+}
+
+async function postJson(url, payload, timeoutMs) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs || 12000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}.`);
+    }
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
