@@ -835,7 +835,7 @@
         <div class="intro-content">
           <span class="eyebrow">Demo assessment unit</span>
           <h2>A cleaner UKCD interview experience.</h2>
-          <p>This version removes SOP, CV, declarations, and extra stages. It captures the student profile, starts the camera, asks standard interview questions aloud, and saves the recording for review.</p>
+          <p>This demo captures the student profile, starts the camera, asks UKCD suitability questions aloud, uses AI-assisted follow-ups where available, and saves the response for review.</p>
         </div>
         <div class="feature-stack">
           <div class="feature-card"><div class="feature-icon">🎙️</div><div><strong>Voice-led questions</strong><span>Browser text-to-speech for demo voice.</span></div></div>
@@ -924,7 +924,7 @@
               <div class="interviewer-avatar">🤖</div>
               <div>
                 <h3>UKCD Interviewer</h3>
-                <span>UKCD pilot interviewer · standard question bank</span>
+                <span>UKCD pilot interviewer · AI-assisted follow-ups</span>
               </div>
             </div>
 
@@ -995,7 +995,8 @@
       voiceBaseText: '',
       voiceFinalText: '',
       voiceSegmentStartMs: null,
-      currentVoiceSegment: null
+      currentVoiceSegment: null,
+      aiFollowUpsEnabled: true
     };
 
     const el = id => document.getElementById(id);
@@ -1295,7 +1296,7 @@ Voice answer recorded in session video from ${formatTime(startMs)} to ${formatTi
       return `${mm}:${ss}`;
     }
 
-    function saveAnswerAndContinue() {
+    async function saveAnswerAndContinue() {
       stopVoiceAnswer(true);
       const answer = el('answerInput').value.trim();
       const question = state.questions[state.currentIndex];
@@ -1311,10 +1312,13 @@ Voice answer recorded in session video from ${formatTime(startMs)} to ${formatTi
         voiceSegment: state.currentVoiceSegment
       });
 
-      const followUp = maybeCreateFollowUp(question, answer);
+      setNextButtonBusy(true);
+      const aiFollowUp = await maybeCreateAIFollowUp(question, answer);
+      const followUp = aiFollowUp || maybeCreateFollowUp(question, answer);
       if (followUp) {
         state.questions.splice(state.currentIndex + 1, 0, followUp);
       }
+      setNextButtonBusy(false);
 
       state.currentIndex += 1;
 
@@ -1323,6 +1327,78 @@ Voice answer recorded in session video from ${formatTime(startMs)} to ${formatTi
       } else {
         renderQuestion();
       }
+    }
+
+
+    function setNextButtonBusy(isBusy) {
+      const btn = el('nextBtn');
+      btn.disabled = !!isBusy;
+      btn.textContent = isBusy ? 'AI interviewer thinking...' : 'Save answer & continue';
+    }
+
+    async function maybeCreateAIFollowUp(question, answer) {
+      if (!state.aiFollowUpsEnabled) return null;
+      // Keep a few fixed core questions in the flow. Use AI mostly for targeted follow-ups.
+      if (state.lastQuestionWasFollowUp) return null;
+      if (state.responses.length > 4) return null;
+
+      try {
+        const result = await callBackendJsonp({
+          action: 'nextQuestion',
+          student: JSON.stringify(state.student || {}),
+          currentQuestion: question,
+          answer: answer,
+          currentIndex: String(state.currentIndex),
+          responses: JSON.stringify((state.responses || []).slice(-4).map(r => ({ question: r.question, answer: r.answer })))
+        }, 12000);
+
+        if (result && result.ok && result.question) {
+          state.lastQuestionWasFollowUp = !!result.isFollowUp;
+          showToast('AI follow-up added: ' + (result.focusArea || 'Suitability'));
+          return result.question;
+        }
+        console.warn('Groq follow-up skipped:', result);
+        return null;
+      } catch (err) {
+        console.warn('Groq follow-up failed, using local fallback:', err);
+        return null;
+      }
+    }
+
+    function callBackendJsonp(params, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'ukcdGroqCb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+        const script = document.createElement('script');
+        const cleanup = () => {
+          try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
+          if (script && script.parentNode) script.parentNode.removeChild(script);
+        };
+
+        window[callbackName] = data => {
+          cleanup();
+          resolve(data);
+        };
+
+        const url = new URL(UKCD_BACKEND_WEB_APP_URL);
+        Object.entries(params || {}).forEach(([key, value]) => {
+          url.searchParams.set(key, value == null ? '' : String(value));
+        });
+        url.searchParams.set('callback', callbackName);
+        url.searchParams.set('_ts', String(Date.now()));
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('Could not reach Apps Script AI endpoint.'));
+        };
+
+        script.src = url.toString();
+        document.body.appendChild(script);
+
+        setTimeout(() => {
+          cleanup();
+          reject(new Error('Apps Script AI endpoint timed out.'));
+        }, timeoutMs || 10000);
+      });
     }
 
     function maybeCreateFollowUp(question, answer) {
