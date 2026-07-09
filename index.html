@@ -3,1669 +3,253 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="UKCD Digital Interview applicant portal" />
   <title>UKCD Digital Interview</title>
-  <style>
-    :root {
-      --navy: #071B33;
-      --navy-2: #102A43;
-      --cream: #F7F2E8;
-      --cream-2: #FBF8F1;
-      --gold: #C9A24D;
-      --gold-2: #E8D49A;
-      --text: #263238;
-      --muted: #6B7280;
-      --line: #E2D8C8;
-      --white: #FFFFFF;
-      --green: #2E7D5B;
-      --red: #B94141;
-      --shadow: 0 24px 70px rgba(7, 27, 51, 0.16);
-      --radius: 26px;
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body { min-height: 100%; }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 16% 8%, rgba(201, 162, 77, 0.18), transparent 28%),
-        radial-gradient(circle at 88% 14%, rgba(7, 27, 51, 0.10), transparent 30%),
-        linear-gradient(135deg, var(--cream) 0%, #fff 42%, #F1E9DA 100%);
-    }
-
-    button, input, select { font: inherit; }
-    button { cursor: pointer; }
-    button:disabled { cursor: not-allowed; opacity: 0.55; }
-
-    .hidden { display: none !important; }
-
-    .shell {
-      width: min(1180px, calc(100% - 32px));
-      margin: 24px auto;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      padding: 17px 19px;
-      background: rgba(255, 255, 255, 0.82);
-      border: 1px solid rgba(226, 216, 200, 0.95);
-      border-radius: 24px;
-      box-shadow: 0 14px 34px rgba(7, 27, 51, 0.08);
-      backdrop-filter: blur(10px);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .logo {
-      width: 58px;
-      height: 58px;
-      border-radius: 18px;
-      background: linear-gradient(145deg, var(--navy), var(--navy-2));
-      color: var(--gold-2);
-      display: grid;
-      place-items: center;
-      font-weight: 900;
-      letter-spacing: -1px;
-      border: 1px solid rgba(201, 162, 77, 0.32);
-      box-shadow: 0 14px 30px rgba(7, 27, 51, 0.20);
-    }
-
-    .brand h1 {
-      margin: 0;
-      color: var(--navy);
-      font-size: 21px;
-      letter-spacing: -0.3px;
-    }
-
-    .brand p {
-      margin: 4px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .session-state {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      color: var(--navy);
-      font-size: 13px;
-      font-weight: 800;
-      padding: 9px 12px;
-      border-radius: 999px;
-      background: #fff;
-      border: 1px solid var(--line);
-      white-space: nowrap;
-    }
-
-    .state-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 999px;
-      background: var(--gold);
-    }
-
-    .state-dot.recording {
-      background: var(--red);
-      box-shadow: 0 0 0 6px rgba(185, 65, 65, 0.12);
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(0.75); opacity: 0.65; }
-    }
-
-    .screen { margin-top: 24px; }
-
-    .card {
-      background: rgba(255,255,255,0.92);
-      border: 1px solid rgba(226, 216, 200, 0.95);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .welcome-grid {
-      display: grid;
-      grid-template-columns: 1.04fr 0.96fr;
-      gap: 24px;
-      align-items: stretch;
-    }
-
-    .hero {
-      min-height: 610px;
-      padding: 42px;
-      color: #fff;
-      background:
-        radial-gradient(circle at 84% 12%, rgba(201, 162, 77, 0.26), transparent 30%),
-        radial-gradient(circle at 8% 94%, rgba(255, 255, 255, 0.10), transparent 26%),
-        linear-gradient(155deg, var(--navy) 0%, var(--navy-2) 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-    }
-
-    .hero-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      width: fit-content;
-      padding: 8px 12px;
-      border-radius: 999px;
-      color: rgba(255,255,255,0.86);
-      background: rgba(255,255,255,0.09);
-      border: 1px solid rgba(255,255,255,0.12);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-    }
-
-    .hero h2 {
-      margin: 28px 0 0;
-      max-width: 660px;
-      font-size: clamp(38px, 6vw, 64px);
-      line-height: 0.98;
-      letter-spacing: -2.2px;
-    }
-
-    .hero p {
-      margin: 22px 0 0;
-      max-width: 560px;
-      color: rgba(255,255,255,0.76);
-      font-size: 17px;
-      line-height: 1.72;
-    }
-
-    .hero-bottom {
-      display: grid;
-      gap: 11px;
-      margin-top: 34px;
-    }
-
-    .mini-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.11);
-    }
-
-    .mini-mark {
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      color: var(--navy);
-      background: var(--gold-2);
-      font-weight: 900;
-      flex: 0 0 auto;
-    }
-
-    .mini-row strong { display: block; font-size: 14px; }
-    .mini-row span { display: block; margin-top: 2px; color: rgba(255,255,255,0.65); font-size: 12px; }
-
-    .side-panel {
-      padding: 34px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-height: 610px;
-    }
-
-    .panel-title h2 {
-      margin: 0;
-      color: var(--navy);
-      font-size: 30px;
-      letter-spacing: -0.8px;
-    }
-
-    .panel-title p {
-      margin: 10px 0 0;
-      color: var(--muted);
-      line-height: 1.58;
-      font-size: 15px;
-    }
-
-    .checklist {
-      margin: 26px 0;
-      display: grid;
-      gap: 12px;
-    }
-
-    .check-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 14px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: var(--cream-2);
-    }
-
-    .tick {
-      width: 24px;
-      height: 24px;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      flex: 0 0 auto;
-      background: rgba(46, 125, 91, 0.11);
-      color: var(--green);
-      font-weight: 900;
-    }
-
-    .check-item strong { display: block; color: var(--navy); font-size: 14px; }
-    .check-item span { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; line-height: 1.4; }
-
-    .btn {
-      border: none;
-      border-radius: 15px;
-      padding: 13px 18px;
-      font-weight: 800;
-      transition: transform .15s ease, opacity .15s ease, box-shadow .15s ease;
-    }
-
-    .btn:hover:not(:disabled) { transform: translateY(-1px); }
-    .btn-primary {
-      color: #fff;
-      background: linear-gradient(135deg, var(--navy), var(--navy-2));
-      box-shadow: 0 16px 30px rgba(7, 27, 51, 0.20);
-    }
-
-    .btn-gold {
-      color: var(--navy);
-      background: linear-gradient(135deg, var(--gold-2), var(--gold));
-      box-shadow: 0 16px 30px rgba(201, 162, 77, 0.28);
-    }
-
-    .btn-soft {
-      color: var(--navy);
-      background: #fff;
-      border: 1px solid var(--line);
-    }
-
-    .btn-danger {
-      color: #fff;
-      background: var(--red);
-    }
-
-    .form-card { padding: 34px; }
-
-    .step-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 26px;
-    }
-
-    .step-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(201, 162, 77, 0.14);
-      color: #755812;
-      font-size: 12px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-    }
-
-    .step-header h2, .check-screen-grid h2, .complete-card h2 {
-      margin: 0;
-      color: var(--navy);
-      font-size: 31px;
-      letter-spacing: -0.8px;
-    }
-
-    .step-header p, .check-screen-grid p, .complete-card p {
-      margin: 9px 0 0;
-      color: var(--muted);
-      line-height: 1.55;
-      font-size: 15px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(220px, 1fr));
-      gap: 18px;
-    }
-
-    .field label {
-      display: block;
-      margin-bottom: 8px;
-      color: var(--navy);
-      font-weight: 800;
-      font-size: 13px;
-    }
-
-    .field input, .field select {
-      width: 100%;
-      min-height: 47px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: #fff;
-      color: var(--text);
-      padding: 11px 13px;
-      outline: none;
-    }
-
-    .field input:focus, .field select:focus {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 4px rgba(201, 162, 77, 0.14);
-    }
-
-    .actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 26px;
-      flex-wrap: wrap;
-    }
-
-    .small-note {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    .check-screen-grid {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 24px;
-      align-items: stretch;
-    }
-
-    .video-card {
-      background: #06111f;
-      border-radius: var(--radius);
-      overflow: hidden;
-      min-height: 520px;
-      position: relative;
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(7, 27, 51, 0.35);
-    }
-
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      background: #06111f;
-    }
-
-    .video-placeholder {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      color: rgba(255,255,255,0.60);
-      text-align: center;
-      padding: 24px;
-    }
-
-    .face-icon {
-      width: 110px;
-      height: 110px;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      margin: 0 auto 14px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      font-size: 42px;
-    }
-
-    .readiness-card {
-      padding: 34px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .status-list {
-      display: grid;
-      gap: 12px;
-      margin-top: 24px;
-    }
-
-    .status-line {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 13px 14px;
-      border-radius: 16px;
-      border: 1px solid var(--line);
-      background: var(--cream-2);
-      color: var(--navy);
-      font-weight: 800;
-      font-size: 14px;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 6px 9px;
-      border-radius: 999px;
-      color: var(--green);
-      background: rgba(46, 125, 91, 0.10);
-      font-size: 12px;
-    }
-
-    .interview-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 22px;
-      min-height: 640px;
-    }
-
-    .interview-video {
-      min-height: 640px;
-    }
-
-    .interview-panel {
-      padding: 30px;
-      display: flex;
-      flex-direction: column;
-      min-height: 640px;
-    }
-
-    .interview-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 22px;
-    }
-
-    .question-count {
-      color: var(--navy);
-      font-size: 13px;
-      font-weight: 900;
-      padding: 8px 11px;
-      border-radius: 999px;
-      background: rgba(201, 162, 77, 0.14);
-      border: 1px solid rgba(201, 162, 77, 0.26);
-      white-space: nowrap;
-    }
-
-    .timer {
-      color: var(--muted);
-      font-weight: 800;
-      font-size: 13px;
-    }
-
-    .question-card {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 30px;
-      border-radius: 24px;
-      background: var(--cream-2);
-      border: 1px solid var(--line);
-    }
-
-    .question-kicker {
-      color: #755812;
-      font-weight: 900;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.9px;
-      margin-bottom: 14px;
-    }
-
-    .question-text {
-      margin: 0;
-      color: var(--navy);
-      font-size: clamp(26px, 3.4vw, 42px);
-      line-height: 1.16;
-      letter-spacing: -1.2px;
-    }
-
-    .conversation-status {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-height: 62px;
-      margin-top: 22px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: #fff;
-      border: 1px solid var(--line);
-      color: var(--navy);
-      font-weight: 800;
-    }
-
-    .listening-bars {
-      display: inline-flex;
-      gap: 3px;
-      align-items: end;
-      width: 34px;
-      height: 24px;
-    }
-
-    .listening-bars span {
-      width: 5px;
-      border-radius: 999px;
-      background: var(--gold);
-      height: 8px;
-      animation: bar 0.9s infinite ease-in-out;
-    }
-
-    .listening-bars span:nth-child(2) { animation-delay: 0.12s; height: 16px; }
-    .listening-bars span:nth-child(3) { animation-delay: 0.24s; height: 22px; }
-    .listening-bars span:nth-child(4) { animation-delay: 0.36s; height: 13px; }
-
-    @keyframes bar {
-      0%, 100% { transform: scaleY(0.55); opacity: 0.55; }
-      50% { transform: scaleY(1); opacity: 1; }
-    }
-
-    .progress-track {
-      margin-top: 22px;
-      height: 9px;
-      border-radius: 999px;
-      overflow: hidden;
-      background: #EEE4D3;
-    }
-
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--gold), var(--navy));
-      transition: width .35s ease;
-    }
-
-    .quiet-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 18px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .submit-card, .complete-card {
-      min-height: 560px;
-      padding: 48px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-    }
-
-    .submit-inner, .complete-inner {
-      width: min(560px, 100%);
-    }
-
-    .big-icon {
-      width: 86px;
-      height: 86px;
-      margin: 0 auto 22px;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      background: rgba(201, 162, 77, 0.15);
-      color: var(--navy);
-      font-size: 34px;
-      font-weight: 900;
-    }
-
-    .spinner {
-      width: 26px;
-      height: 26px;
-      border-radius: 999px;
-      border: 3px solid #eadfca;
-      border-top-color: var(--gold);
-      display: inline-block;
-      animation: spin 0.85s linear infinite;
-      vertical-align: middle;
-      margin-right: 10px;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .completion-ref {
-      display: inline-flex;
-      margin-top: 18px;
-      padding: 10px 13px;
-      border-radius: 999px;
-      background: var(--cream-2);
-      border: 1px solid var(--line);
-      color: var(--navy);
-      font-weight: 800;
-      font-size: 13px;
-    }
-
-    .toast {
-      position: fixed;
-      right: 22px;
-      bottom: 22px;
-      max-width: min(460px, calc(100% - 44px));
-      padding: 14px 16px;
-      border-radius: 16px;
-      background: var(--navy);
-      color: #fff;
-      box-shadow: 0 18px 40px rgba(7,27,51,0.24);
-      z-index: 50;
-      line-height: 1.45;
-      font-size: 13px;
-    }
-
-    .debug-panel {
-      margin-top: 18px;
-      border-radius: 18px;
-      border: 1px dashed rgba(7, 27, 51, 0.28);
-      background: rgba(255,255,255,0.70);
-      padding: 14px;
-      color: var(--navy);
-      font-family: Consolas, monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      max-height: 220px;
-      overflow: auto;
-    }
-
-    @media (max-width: 900px) {
-      .welcome-grid, .check-screen-grid, .interview-layout { grid-template-columns: 1fr; }
-      .hero, .side-panel, .video-card, .readiness-card, .interview-video, .interview-panel { min-height: auto; }
-      .video-card, .interview-video { height: 360px; }
-      .topbar, .step-header { align-items: flex-start; flex-direction: column; }
-      .form-grid { grid-template-columns: 1fr; }
-      .hero { padding: 30px; }
-      .side-panel, .form-card, .readiness-card, .interview-panel { padding: 24px; }
-      .question-card { padding: 24px; min-height: 280px; }
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            ukcd: {
+              navy: '#071b33',
+              ink: '#142235',
+              cream: '#f7f1e4',
+              ivory: '#fffaf1',
+              gold: '#c4a04f',
+              mutedGold: '#d8c18b'
+            }
+          },
+          boxShadow: {
+            academic: '0 24px 70px rgba(7, 27, 51, 0.14)'
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="styles/main.css" />
 </head>
-<body>
-  <main class="shell">
-    <header class="topbar">
-      <div class="brand">
-        <div class="logo" aria-label="UKCD Digital Interview">🧑🏻‍💻</div>
+<body class="min-h-screen bg-ukcd-cream font-sans text-ukcd-ink antialiased">
+  <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
+    <header class="app-shell flex flex-col gap-4 border border-white/70 bg-white/90 p-4 shadow-academic backdrop-blur md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center gap-4">
+        <div class="brand-mark" aria-hidden="true">
+          <i data-lucide="graduation-cap"></i>
+        </div>
         <div>
-          <h1>UKCD Digital Interview</h1>
-          <p id="topSubtext">Applicant interview session</p>
+          <p class="text-xs font-black uppercase tracking-[0.24em] text-ukcd-gold">Applicant Portal</p>
+          <h1 class="text-xl font-black tracking-tight text-ukcd-navy sm:text-2xl">UKCD Digital Interview</h1>
         </div>
       </div>
-      <div class="session-state"><span id="topDot" class="state-dot"></span><span id="topState">Ready to begin</span></div>
+      <div class="flex items-center gap-3 rounded-full border border-ukcd-mutedGold/40 bg-ukcd-ivory px-4 py-2 text-sm font-extrabold text-ukcd-navy">
+        <span id="sessionDot" class="status-dot"></span>
+        <span id="sessionLabel">Ready to begin</span>
+      </div>
     </header>
 
-    <section id="welcomeScreen" class="screen">
-      <div class="welcome-grid">
-        <section class="hero card">
-          <div>
-            <div class="hero-kicker"><span class="state-dot"></span>Digital interview</div>
-            <h2>UKCD Digital Interview</h2>
-            <p>This short recorded interview helps us understand your study plans, programme motivation, and readiness for your chosen course.</p>
+    <section id="welcomeScreen" class="screen is-active flex-1 py-6">
+      <div class="grid min-h-[calc(100vh-154px)] gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+        <section class="hero-panel flex flex-col justify-between overflow-hidden border border-white/10 p-7 text-white shadow-academic sm:p-10 lg:p-12">
+          <div class="max-w-3xl">
+            <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-white/80">
+              <i data-lucide="sparkles" class="h-4 w-4"></i>
+              Digital Interview
+            </div>
+            <h2 class="mt-7 text-5xl font-black leading-[0.96] tracking-tight sm:text-6xl lg:text-7xl">UKCD Digital Interview</h2>
+            <p class="mt-6 max-w-2xl text-lg leading-8 text-white/76">
+              A guided interview to understand your study plans, preparation, and goals for your chosen programme.
+            </p>
           </div>
-          <div class="hero-bottom">
-            <div class="mini-row"><div class="mini-mark">1</div><div><strong>Confirm your details</strong><span>Please make sure your application information is accurate.</span></div></div>
-            <div class="mini-row"><div class="mini-mark">2</div><div><strong>Check camera and microphone</strong><span>Use a quiet, well-lit space before starting.</span></div></div>
-            <div class="mini-row"><div class="mini-mark">3</div><div><strong>Answer clearly</strong><span>The interview will guide you through one question at a time.</span></div></div>
+          <div class="mt-10 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+            <div class="hero-step">
+              <i data-lucide="badge-check"></i>
+              <strong>Confirm details</strong>
+              <span>Review your application information.</span>
+            </div>
+            <div class="hero-step">
+              <i data-lucide="video"></i>
+              <strong>Check readiness</strong>
+              <span>Allow camera and microphone access.</span>
+            </div>
+            <div class="hero-step">
+              <i data-lucide="messages-square"></i>
+              <strong>Answer naturally</strong>
+              <span>Questions are asked one at a time.</span>
+            </div>
           </div>
         </section>
 
-        <aside class="side-panel card">
+        <aside class="app-card flex flex-col justify-between p-6 sm:p-8 lg:p-10">
           <div>
-            <div class="panel-title">
-              <h2>Before you begin</h2>
-              <p>Please complete the interview in one sitting. Once the interview starts, questions will be asked automatically.</p>
-            </div>
-            <div class="checklist">
-              <div class="check-item"><div class="tick">✓</div><div><strong>Quiet environment</strong><span>Choose a place with minimal background noise.</span></div></div>
-              <div class="check-item"><div class="tick">✓</div><div><strong>Camera ready</strong><span>Keep your face clearly visible throughout the session.</span></div></div>
-              <div class="check-item"><div class="tick">✓</div><div><strong>Stable connection</strong><span>Keep this page open until the completion message appears.</span></div></div>
+            <p class="eyebrow">Before You Begin</p>
+            <h2 class="mt-3 text-3xl font-black tracking-tight text-ukcd-navy">Prepare for a calm, focused interview.</h2>
+            <p class="mt-4 leading-7 text-slate-600">
+              Please complete the interview in one sitting from a quiet, well-lit place. The questions will be played aloud and your spoken responses will be captured automatically.
+            </p>
+            <div class="mt-8 grid gap-3">
+              <div class="check-row"><i data-lucide="volume-2"></i><span>Use a quiet room and speak clearly.</span></div>
+              <div class="check-row"><i data-lucide="monitor-check"></i><span>Keep this page open until completion appears.</span></div>
+              <div class="check-row"><i data-lucide="wifi"></i><span>Use a stable internet connection.</span></div>
             </div>
           </div>
-          <button class="btn btn-gold" id="beginBtn" type="button">Begin Interview</button>
+          <button id="beginBtn" class="btn btn-gold mt-10" type="button">
+            <i data-lucide="arrow-right"></i>
+            Begin Interview
+          </button>
         </aside>
       </div>
     </section>
 
-    <section id="detailsScreen" class="screen hidden">
-      <div class="form-card card">
-        <div class="step-header">
-          <div>
-            <div class="step-label">Step 1</div>
-            <h2>Applicant Details</h2>
-            <p>Please confirm your details before starting the interview.</p>
-          </div>
+    <section id="detailsScreen" class="screen flex-1 py-6">
+      <div class="app-card p-6 sm:p-8 lg:p-10">
+        <div class="section-heading">
+          <p class="eyebrow">Step 1</p>
+          <h2>Applicant Details</h2>
+          <p>Please confirm your details before continuing.</p>
         </div>
-        <div class="form-grid">
-          <div class="field"><label for="fullName">Full name</label><input id="fullName" autocomplete="name" placeholder="e.g. Jane Doe" /></div>
-          <div class="field"><label for="email">Email address</label><input id="email" type="email" autocomplete="email" placeholder="jane@example.com" /></div>
-          <div class="field"><label for="phone">Phone number</label><input id="phone" autocomplete="tel" placeholder="Including country code" /></div>
-          <div class="field"><label for="studentId">Student ID</label><input id="studentId" placeholder="Student ID" /></div>
-          <div class="field"><label for="programme">Programme</label><input id="programme" placeholder="e.g. MBA" /></div>
-          <div class="field"><label for="studyLevel">Study level</label><select id="studyLevel"><option value="">Select level</option><option>Bachelor's</option><option>Master's</option><option>Other</option></select></div>
-          <div class="field"><label for="country">Country of residence</label><input id="country" placeholder="e.g. India" /></div>
-          <div class="field"><label for="intake">Intake</label><input id="intake" placeholder="e.g. September 2026" /></div>
-        </div>
-        <div class="actions">
-          <span class="small-note">Your responses will be used for application review purposes.</span>
-          <button class="btn btn-primary" id="detailsNextBtn" type="button">Continue</button>
+        <form id="detailsForm" class="mt-8 grid gap-5 md:grid-cols-2" novalidate>
+          <label class="field">Full name<input id="fullName" autocomplete="name" placeholder="e.g. Jane Doe" /></label>
+          <label class="field">Email address<input id="email" type="email" autocomplete="email" placeholder="jane@example.com" /></label>
+          <label class="field">Phone number<input id="phone" autocomplete="tel" placeholder="Including country code" /></label>
+          <label class="field">Student ID<input id="studentId" placeholder="Your student ID" /></label>
+          <label class="field">Programme<input id="programme" placeholder="e.g. Business Management" /></label>
+          <label class="field">Study level
+            <select id="studyLevel">
+              <option value="">Select level</option>
+              <option value="Bachelor's">Bachelor's</option>
+              <option value="Master's">Master's</option>
+              <option value="Foundation">Foundation</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label class="field">Country of residence<input id="country" autocomplete="country-name" placeholder="e.g. India" /></label>
+          <label class="field">Intake<input id="intake" placeholder="e.g. September 2026" /></label>
+        </form>
+        <div id="detailsErrors" class="mt-5 hidden rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert"></div>
+        <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p class="max-w-xl text-sm leading-6 text-slate-500">Your details help match the interview to your application record.</p>
+          <button id="detailsNextBtn" class="btn btn-primary" type="button">
+            <i data-lucide="arrow-right"></i>
+            Continue
+          </button>
         </div>
       </div>
     </section>
 
-    <section id="checkScreen" class="screen hidden">
-      <div class="check-screen-grid">
-        <div class="video-card">
-          <video id="checkPreview" playsinline autoplay muted></video>
-          <div id="checkPlaceholder" class="video-placeholder"><div><div class="face-icon">👤</div><strong>Camera preview will appear here</strong><br><span>Allow camera and microphone access when prompted.</span></div></div>
+    <section id="checkScreen" class="screen flex-1 py-6">
+      <div class="grid min-h-[calc(100vh-154px)] gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+        <div class="video-frame relative overflow-hidden bg-ukcd-navy shadow-academic">
+          <video id="checkPreview" class="h-full w-full object-cover" playsinline autoplay muted></video>
+          <div id="checkPlaceholder" class="video-placeholder">
+            <i data-lucide="camera"></i>
+            <strong>Camera preview will appear here</strong>
+            <span>Allow access when your browser asks.</span>
+          </div>
         </div>
-        <aside class="readiness-card card">
+        <aside class="app-card flex flex-col justify-between p-6 sm:p-8 lg:p-10">
           <div>
-            <div class="step-label">Step 2</div>
-            <h2>Readiness Check</h2>
-            <p>We will check that your camera and microphone are ready before the interview begins.</p>
-            <div class="status-list">
-              <div class="status-line">Camera <span id="cameraBadge" class="status-badge">Waiting</span></div>
-              <div class="status-line">Microphone <span id="micBadge" class="status-badge">Waiting</span></div>
-              <div class="status-line">Environment <span class="status-badge">Quiet space recommended</span></div>
+            <div class="section-heading">
+              <p class="eyebrow">Step 2</p>
+              <h2>Readiness Check</h2>
+              <p>We will confirm that your camera and microphone are available before the interview begins.</p>
+            </div>
+            <div class="mt-8 grid gap-3">
+              <div class="readiness-row"><span><i data-lucide="camera"></i>Camera</span><strong id="cameraBadge">Waiting</strong></div>
+              <div class="readiness-row"><span><i data-lucide="mic"></i>Microphone</span><strong id="micBadge">Waiting</strong></div>
+              <div class="readiness-row"><span><i data-lucide="shield-check"></i>Setting</span><strong>Quiet space recommended</strong></div>
             </div>
           </div>
-          <div class="actions">
-            <button class="btn btn-soft" id="retryCameraBtn" type="button">Retry check</button>
-            <button class="btn btn-gold" id="startInterviewBtn" type="button" disabled>Start Interview</button>
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <button id="retryCameraBtn" class="btn btn-secondary flex-1" type="button">
+              <i data-lucide="refresh-cw"></i>
+              Retry Check
+            </button>
+            <button id="startInterviewBtn" class="btn btn-gold flex-1" type="button" disabled>
+              <i data-lucide="play"></i>
+              Start Interview
+            </button>
           </div>
         </aside>
       </div>
     </section>
 
-    <section id="interviewScreen" class="screen hidden">
-      <div class="interview-layout">
-        <div class="video-card interview-video">
-          <video id="interviewPreview" playsinline autoplay muted></video>
-          <div id="interviewPlaceholder" class="video-placeholder hidden"><div><div class="face-icon">👤</div><strong>Camera preview</strong></div></div>
+    <section id="interviewScreen" class="screen flex-1 py-6">
+      <div class="grid min-h-[calc(100vh-154px)] gap-6 lg:grid-cols-[0.98fr_1.02fr]">
+        <div class="video-frame relative overflow-hidden bg-ukcd-navy shadow-academic">
+          <video id="interviewPreview" class="h-full w-full object-cover" playsinline autoplay muted></video>
+          <div id="interviewPlaceholder" class="video-placeholder hidden">
+            <i data-lucide="video"></i>
+            <strong>Camera preview</strong>
+          </div>
         </div>
-        <section class="interview-panel card">
-          <div class="interview-top">
-            <span id="questionCounter" class="question-count">Question 1 of 5</span>
+        <section class="app-card flex flex-col p-6 sm:p-8 lg:p-10">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span id="questionCounter" class="question-pill">Question 1 of 5</span>
             <span id="timer" class="timer">00:00</span>
           </div>
-          <div class="question-card">
-            <div class="question-kicker">Interview question</div>
-            <h2 id="questionText" class="question-text">Preparing your interview...</h2>
-            <div class="conversation-status" id="conversationStatus">
-              <div class="listening-bars hidden" id="listeningBars"><span></span><span></span><span></span><span></span></div>
-              <span id="statusText">Please wait.</span>
+          <div class="question-card mt-7 flex flex-1 flex-col justify-center p-6 sm:p-8">
+            <p id="stageLabel" class="eyebrow">Interview Question</p>
+            <h2 id="questionText" class="mt-4 text-3xl font-black leading-tight tracking-tight text-ukcd-navy sm:text-4xl">Preparing your interview...</h2>
+            <div class="mt-7 rounded-xl border border-ukcd-mutedGold/35 bg-white p-4">
+              <div class="flex items-center gap-3">
+                <div id="listeningBars" class="listening-bars hidden" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                <i id="statusIcon" data-lucide="loader-circle" class="h-5 w-5 text-ukcd-gold"></i>
+                <p id="statusText" class="font-bold text-ukcd-navy">Please wait.</p>
+              </div>
             </div>
-            <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
-            <div class="quiet-controls">
+            <div class="mt-6 h-2 overflow-hidden rounded-full bg-[#eadfca]">
+              <div id="progressFill" class="h-full w-0 rounded-full bg-gradient-to-r from-ukcd-gold to-ukcd-navy transition-all duration-300"></div>
+            </div>
+            <div class="mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
               <span id="instructionText">Answer naturally after the question has been asked.</span>
-              <button class="btn btn-soft" id="repeatQuestionBtn" type="button">Replay question</button>
+              <button id="repeatQuestionBtn" class="btn btn-secondary compact" type="button">
+                <i data-lucide="rotate-ccw"></i>
+                Hear Again
+              </button>
             </div>
           </div>
-          <div class="actions">
-            <span class="small-note">Please keep this page open until the interview is completed.</span>
-            <button class="btn btn-danger" id="endSessionBtn" type="button">End session</button>
+          <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm leading-6 text-slate-500">Please keep this page open until the completion message appears.</p>
+            <button id="endSessionBtn" class="btn btn-danger" type="button">
+              <i data-lucide="square"></i>
+              End Session
+            </button>
           </div>
         </section>
       </div>
     </section>
 
-    <section id="submitScreen" class="screen hidden">
-      <div class="submit-card card">
-        <div class="submit-inner">
-          <div class="big-icon"><span class="spinner"></span></div>
-          <h2 id="submitTitle">Finalising your interview</h2>
-          <p id="submitText">Please keep this page open while your interview is submitted. This may take a few moments.</p>
+    <section id="finalisingScreen" class="screen flex-1 py-6">
+      <div class="app-card grid min-h-[calc(100vh-154px)] place-items-center p-8 text-center">
+        <div class="max-w-xl">
+          <div class="final-icon mx-auto"><i data-lucide="loader-circle"></i></div>
+          <h2 class="mt-7 text-3xl font-black tracking-tight text-ukcd-navy">Finalising your interview</h2>
+          <p class="mt-4 leading-7 text-slate-600">Please keep this page open while your interview is securely transferred. This may take a few moments.</p>
         </div>
       </div>
     </section>
 
-    <section id="completeScreen" class="screen hidden">
-      <div class="complete-card card">
-        <div class="complete-inner">
-          <div class="big-icon">✓</div>
-          <h2 id="completeTitle">Interview Completed</h2>
-          <p id="completeText">Thank you. Your interview has been submitted successfully. You may now close this window.</p>
-          <div id="referenceId" class="completion-ref"></div>
-          <div class="actions" style="justify-content:center; margin-top:24px;">
-            <button class="btn btn-soft" id="restartBtn" type="button">Start new session</button>
-          </div>
+    <section id="completeScreen" class="screen flex-1 py-6">
+      <div class="app-card grid min-h-[calc(100vh-154px)] place-items-center p-8 text-center">
+        <div class="max-w-xl">
+          <div class="complete-icon mx-auto"><i data-lucide="check"></i></div>
+          <h2 id="completeTitle" class="mt-7 text-3xl font-black tracking-tight text-ukcd-navy">Interview Completed</h2>
+          <p id="completeText" class="mt-4 leading-7 text-slate-600">Thank you. Your interview has been submitted successfully. You may now close this window.</p>
+          <div id="referenceId" class="mt-6 inline-flex rounded-full border border-ukcd-mutedGold/40 bg-ukcd-ivory px-4 py-2 text-sm font-extrabold text-ukcd-navy"></div>
         </div>
       </div>
     </section>
 
-    <pre id="debugPanel" class="debug-panel hidden"></pre>
+    <pre id="debugPanel" class="debug-panel hidden" aria-hidden="true"></pre>
   </main>
 
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
-  <script>
-    const UKCD_BACKEND_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzoWg2qqUeVKyNJHkSyOMkVxVAgvX_8W372oNHV8rzHXnFP8OXBeemZN1yAoTZq00-6Lg/exec';
-
-    const DEBUG = new URLSearchParams(location.search).get('debug') === 'true';
-    const TOTAL_QUESTIONS = 5;
-    const SILENCE_MS = 3200;
-    const MIN_ANSWER_MS = 4500;
-    const MAX_ANSWER_MS = 65000;
-    const MIN_TRANSCRIPT_CHARS = 10;
-
-    const state = {
-      student: {},
-      stream: null,
-      mixedStream: null,
-      audioContext: null,
-      recordDestination: null,
-      microphoneSource: null,
-      microphoneGain: null,
-      ttsPlaybackBus: null,
-      ttsRecordBus: null,
-      ttsSilentSource: null,
-      ttsAudioElement: null,
-      ttsElementSource: null,
-      ttsObjectUrl: null,
-      activeTtsNodes: [],
-      currentTtsSource: null,
-      recorder: null,
-      chunks: [],
-      recordedBlob: null,
-      totalRecordedBytes: 0,
-      recordingWatchdog: null,
-      startedAt: null,
-      timerHandle: null,
-      questionNumber: 0,
-      currentQuestion: '',
-      currentFocus: 'Introduction',
-      responses: [],
-      phase: 'idle',
-      recognition: null,
-      recognitionActive: false,
-      recognitionSupported: false,
-      answerFinal: '',
-      answerInterim: '',
-      answerStartedAt: null,
-      lastSpeechAt: null,
-      silenceTimer: null,
-      retryCountForQuestion: 0,
-      completingAnswer: false
-    };
-
-    const fallbackQuestions = [
-      'Please introduce yourself and confirm the programme you are applying for.',
-      'Why have you chosen this programme, and how does it connect with your previous study or work experience?',
-      'Why have you chosen UKCD for this stage of your application journey?',
-      'What do you understand about studying in the UK, including academic expectations and independent learning?',
-      'How are you planning to fund your studies and living costs?',
-      'What are your career plans after completing this programme?'
-    ];
-
-    const $ = id => document.getElementById(id);
-
-    $('beginBtn').addEventListener('click', () => showScreen('detailsScreen'));
-    $('detailsNextBtn').addEventListener('click', proceedToReadinessCheck);
-    $('retryCameraBtn').addEventListener('click', initCameraPreview);
-    $('startInterviewBtn').addEventListener('click', startConversationInterview);
-    $('repeatQuestionBtn').addEventListener('click', () => speakQuestion(state.currentQuestion));
-    $('endSessionBtn').addEventListener('click', () => finishInterview('manual'));
-    $('restartBtn').addEventListener('click', () => window.location.reload());
-
-    if (DEBUG) $('debugPanel').classList.remove('hidden');
-
-    function showScreen(id) {
-      ['welcomeScreen', 'detailsScreen', 'checkScreen', 'interviewScreen', 'submitScreen', 'completeScreen']
-        .forEach(screen => $(screen).classList.toggle('hidden', screen !== id));
-      updateTopState(id);
-    }
-
-    function updateTopState(screenId) {
-      const dot = $('topDot');
-      dot.classList.remove('recording');
-      const labels = {
-        welcomeScreen: 'Ready to begin',
-        detailsScreen: 'Applicant details',
-        checkScreen: 'Readiness check',
-        interviewScreen: 'Recording',
-        submitScreen: 'Finalising',
-        completeScreen: 'Completed'
-      };
-      $('topState').textContent = labels[screenId] || 'In progress';
-      if (screenId === 'interviewScreen') dot.classList.add('recording');
-    }
-
-    async function proceedToReadinessCheck() {
-      const student = collectStudentDetails();
-      if (!student) return;
-      state.student = student;
-      showScreen('checkScreen');
-      await initCameraPreview();
-    }
-
-    function collectStudentDetails() {
-      const student = {
-        fullName: $('fullName').value.trim(),
-        email: $('email').value.trim(),
-        phone: $('phone').value.trim(),
-        studentId: $('studentId').value.trim(),
-        programme: $('programme').value.trim(),
-        studyLevel: $('studyLevel').value.trim(),
-        country: $('country').value.trim(),
-        intake: $('intake').value.trim()
-      };
-
-      if (!student.fullName || !student.email || !student.studentId || !student.programme) {
-        toast('Please complete full name, email address, student ID, and programme before continuing.');
-        return null;
-      }
-      return student;
-    }
-
-    async function initCameraPreview() {
-      $('startInterviewBtn').disabled = true;
-      setBadge('cameraBadge', 'Checking');
-      setBadge('micBadge', 'Checking');
-
-      try {
-        stopTracks();
-        state.stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 20, max: 24 } },
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-        });
-
-        const checkPreview = $('checkPreview');
-        checkPreview.srcObject = state.stream;
-        checkPreview.muted = true;
-        $('checkPlaceholder').classList.add('hidden');
-        try { await checkPreview.play(); } catch (e) { debug('Preview play warning: ' + e.message); }
-
-        $('interviewPreview').srcObject = state.stream;
-        $('interviewPreview').muted = true;
-
-        const cameraReady = state.stream.getVideoTracks().some(track => track.readyState === 'live');
-        const micReady = state.stream.getAudioTracks().some(track => track.readyState === 'live');
-
-        setBadge('cameraBadge', cameraReady ? 'Ready' : 'Not detected');
-        setBadge('micBadge', micReady ? 'Ready' : 'Not detected');
-        $('startInterviewBtn').disabled = !(cameraReady && micReady);
-
-        if (!cameraReady || !micReady) toast('We could not detect both camera and microphone. Please check browser permissions and try again.');
-      } catch (err) {
-        setBadge('cameraBadge', 'Permission needed');
-        setBadge('micBadge', 'Permission needed');
-        toast('We could not access your camera or microphone. Please allow browser permissions and refresh the page.');
-        debug('Camera/mic error: ' + (err && err.stack ? err.stack : err));
-      }
-    }
-
-    function setBadge(id, text) { $(id).textContent = text; }
-
-    async function startConversationInterview() {
-      try {
-        state.responses = [];
-        state.questionNumber = 0;
-        state.retryCountForQuestion = 0;
-        state.startedAt = Date.now();
-        state.timerHandle = setInterval(updateTimer, 1000);
-        await setupAudioMixer();
-        startFullSessionRecording();
-        initialiseSpeechRecognition();
-        startRecognitionLoop();
-        showScreen('interviewScreen');
-        $('interviewPreview').srcObject = state.stream;
-        try { await $('interviewPreview').play(); } catch (e) { debug('Interview preview warning: ' + e.message); }
-        await askQuestion(fallbackQuestions[0], 'Introduction');
-      } catch (err) {
-        toast('We could not start the interview. Please refresh the page and try again.');
-        debug('Start interview error: ' + (err && err.stack ? err.stack : err));
-      }
-    }
-
-    async function setupAudioMixer() {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      state.mixedStream = state.stream;
-
-      if (!AudioContextClass) {
-        debug('Web Audio API unavailable. Recording will use camera/microphone only.');
-        return;
-      }
-
-      try {
-        if (!state.audioContext || state.audioContext.state === 'closed') {
-          state.audioContext = new AudioContextClass();
-        }
-        if (state.audioContext.state === 'suspended') {
-          await state.audioContext.resume();
-        }
-
-        state.recordDestination = state.audioContext.createMediaStreamDestination();
-        state.microphoneSource = state.audioContext.createMediaStreamSource(state.stream);
-        state.microphoneGain = state.audioContext.createGain();
-        state.microphoneGain.gain.value = 1.0;
-        state.microphoneSource.connect(state.microphoneGain);
-        state.microphoneGain.connect(state.recordDestination);
-
-        // Permanent interviewer-audio buses are connected BEFORE MediaRecorder starts.
-        // v14 uses a strict AudioBuffer mixer. Groq TTS audio is decoded into
-        // an AudioBufferSourceNode, then connected directly to BOTH:
-        // 1) audioContext.destination, so the applicant hears it
-        // 2) recordDestination, so the MP4 captures it.
-        // This avoids relying on normal page/audio-element playback.
-        state.ttsPlaybackBus = state.audioContext.createGain();
-        state.ttsPlaybackBus.gain.value = 0.95;
-        state.ttsPlaybackBus.connect(state.audioContext.destination);
-
-        state.ttsRecordBus = state.audioContext.createGain();
-        state.ttsRecordBus.gain.value = 1.35;
-        state.ttsRecordBus.connect(state.recordDestination);
-
-        // v14 intentionally does NOT use speechSynthesis or audioElement.captureStream().
-        // Every interviewer question is decoded and routed through these buses by playQuestionAudio().
-        state.ttsAudioElement = null;
-        state.ttsElementSource = null;
-
-        // Keep the record path active for the whole session.
-        try {
-          const silentGain = state.audioContext.createGain();
-          silentGain.gain.value = 0.00001;
-          const silentSource = state.audioContext.createConstantSource();
-          silentSource.offset.value = 0;
-          silentSource.connect(silentGain);
-          silentGain.connect(state.recordDestination);
-          silentSource.start();
-          state.ttsSilentSource = silentSource;
-        } catch (silentErr) {
-          debug('Silent mixer warning: ' + silentErr.message);
-        }
-
-        const finalStream = new MediaStream();
-        state.stream.getVideoTracks().forEach(track => finalStream.addTrack(track));
-        const mixedAudioTrack = state.recordDestination.stream.getAudioTracks()[0];
-        if (mixedAudioTrack) finalStream.addTrack(mixedAudioTrack);
-        else state.stream.getAudioTracks().forEach(track => finalStream.addTrack(track));
-        state.mixedStream = finalStream;
-
-        debug('Strict audio-buffer mixer ready. Final stream tracks: ' + state.mixedStream.getTracks().map(track => track.kind + ':' + track.readyState).join(', ') + '. Recorder will use camera video + Web Audio mixed output.');
-      } catch (err) {
-        debug('Audio mixer setup warning: ' + err.message);
-        state.mixedStream = state.stream;
-      }
-    }
-
-    function startFullSessionRecording() {
-      if (!window.MediaRecorder) throw new Error('MediaRecorder is not supported in this browser.');
-      const mimeType = pickRecordingType();
-      const options = mimeType ? { mimeType, videoBitsPerSecond: 850000, audioBitsPerSecond: 128000 } : { videoBitsPerSecond: 850000, audioBitsPerSecond: 128000 };
-
-      state.chunks = [];
-      state.totalRecordedBytes = 0;
-      state.recordedBlob = null;
-      const recordingStream = state.mixedStream || state.stream;
-      state.recorder = new MediaRecorder(recordingStream, options);
-
-      state.recorder.ondataavailable = event => {
-        if (event.data && event.data.size > 0) {
-          state.chunks.push(event.data);
-          state.totalRecordedBytes += event.data.size;
-          debug('Recorder chunk: ' + event.data.size + ' bytes. Total: ' + state.totalRecordedBytes);
-        }
-      };
-      state.recorder.onerror = event => debug('Recorder error: ' + JSON.stringify(event));
-      state.recorder.start(1000);
-      state.recordingWatchdog = setInterval(() => {
-        try { if (state.recorder && state.recorder.state === 'recording') state.recorder.requestData(); }
-        catch (err) { debug('requestData warning: ' + err.message); }
-      }, 2500);
-      debug('Recording started with MIME: ' + (state.recorder.mimeType || mimeType || 'browser default') + '. Audio mode: mixed interviewer + applicant.');
-    }
-
-    function pickRecordingType() {
-      const types = [
-        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-        'video/mp4;codecs=h264,aac',
-        'video/mp4',
-        'video/webm;codecs=vp9,opus',
-        'video/webm;codecs=vp8,opus',
-        'video/webm'
-      ];
-      return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
-    }
-
-    function initialiseSpeechRecognition() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      state.recognitionSupported = !!SpeechRecognition;
-      if (!SpeechRecognition) {
-        debug('SpeechRecognition not supported. Video/audio recording will still continue.');
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'en-GB';
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        state.recognitionActive = true;
-        debug('Speech recognition started.');
-      };
-
-      recognition.onresult = event => {
-        if (state.phase !== 'listening') return;
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript || '';
-          if (event.results[i].isFinal) state.answerFinal += transcript + ' ';
-          else interim += transcript;
-        }
-        state.answerInterim = interim;
-        const combined = getCurrentTranscript();
-        if (combined.trim()) {
-          state.lastSpeechAt = Date.now();
-          $('statusText').textContent = 'Listening...';
-          $('listeningBars').classList.remove('hidden');
-        }
-      };
-
-      recognition.onerror = event => {
-        debug('Speech recognition warning: ' + event.error + ' ' + (event.message || ''));
-      };
-
-      recognition.onend = () => {
-        state.recognitionActive = false;
-        debug('Speech recognition ended. Phase: ' + state.phase);
-        if (state.phase !== 'ended' && state.phase !== 'submitting') {
-          setTimeout(startRecognitionLoop, 450);
-        }
-      };
-
-      state.recognition = recognition;
-    }
-
-    function startRecognitionLoop() {
-      if (!state.recognitionSupported || !state.recognition || state.recognitionActive) return;
-      try { state.recognition.start(); }
-      catch (err) { debug('Recognition start warning: ' + err.message); }
-    }
-
-    async function askQuestion(question, focusArea) {
-      state.questionNumber += 1;
-      state.currentQuestion = question;
-      state.currentFocus = focusArea || 'Suitability';
-      state.retryCountForQuestion = 0;
-      renderQuestion();
-      await speakQuestion(question);
-    }
-
-    async function repeatCurrentQuestion() {
-      renderQuestion();
-      $('statusText').textContent = 'The question will be repeated.';
-      await wait(900);
-      await speakQuestion(state.currentQuestion);
-    }
-
-    function renderQuestion() {
-      $('questionCounter').textContent = 'Question ' + state.questionNumber + ' of ' + TOTAL_QUESTIONS;
-      $('questionText').textContent = state.currentQuestion;
-      $('progressFill').style.width = Math.round(((state.questionNumber - 1) / TOTAL_QUESTIONS) * 100) + '%';
-      $('instructionText').textContent = 'Answer naturally after the question has been asked.';
-      $('listeningBars').classList.add('hidden');
-      $('statusText').textContent = 'Preparing question...';
-    }
-
-    async function speakQuestion(question) {
-      state.phase = 'speaking';
-      $('statusText').textContent = 'Question being asked...';
-      $('listeningBars').classList.add('hidden');
-      resetAnswerCapture();
-
-      try {
-        await playQuestionAudio(question);
-      } catch (err) {
-        debug('Groq interviewer audio warning: ' + (err && err.message ? err.message : err));
-        await browserSpeechFallback(question);
-      }
-
-      if (state.phase === 'speaking') startListeningWindow();
-    }
-
-    async function playQuestionAudio(question) {
-      if (!state.audioContext || !state.recordDestination) throw new Error('Audio mixer is not available.');
-      if (!state.ttsPlaybackBus || !state.ttsRecordBus) throw new Error('Interviewer audio mixer buses are not available.');
-      if (state.audioContext.state === 'suspended') await state.audioContext.resume();
-
-      const tts = await getQuestionAudioFromBackend(question);
-      const arrayBuffer = base64ToArrayBuffer(tts.audioBase64);
-      const audioBuffer = await decodeAudioBuffer(arrayBuffer);
-
-      await new Promise((resolve, reject) => {
-        let done = false;
-        const source = state.audioContext.createBufferSource();
-        const sourceGain = state.audioContext.createGain();
-        sourceGain.gain.value = 1.0;
-
-        source.buffer = audioBuffer;
-        source.connect(sourceGain);
-
-        // Strict v14 routing: one decoded interviewer source goes to both
-        // speaker playback and the recording destination at the same time.
-        sourceGain.connect(state.ttsPlaybackBus);
-        sourceGain.connect(state.ttsRecordBus);
-
-        state.currentTtsSource = source;
-        state.activeTtsNodes.push(source);
-
-        const cleanup = () => {
-          try { source.disconnect(); } catch (e) {}
-          try { sourceGain.disconnect(); } catch (e) {}
-          state.activeTtsNodes = state.activeTtsNodes.filter(node => node !== source);
-          if (state.currentTtsSource === source) state.currentTtsSource = null;
-        };
-
-        source.onended = () => {
-          if (done) return;
-          done = true;
-          cleanup();
-          resolve();
-        };
-
-        try {
-          debug('Groq interviewer audio decoded and routed to speaker + MP4 mixer. Bytes: ' + (tts.byteLength || arrayBuffer.byteLength || 0) + ', duration: ' + audioBuffer.duration.toFixed(2) + 's');
-          source.start(0);
-        } catch (err) {
-          cleanup();
-          reject(err);
-          return;
-        }
-
-        // Failsafe in case onended does not fire in the browser.
-        setTimeout(() => {
-          if (done) return;
-          done = true;
-          cleanup();
-          resolve();
-        }, Math.max(5000, (audioBuffer.duration + 0.75) * 1000));
-      });
-    }
-
-    function decodeAudioBuffer(arrayBuffer) {
-      return new Promise((resolve, reject) => {
-        try {
-          const copy = arrayBuffer.slice(0);
-          const maybePromise = state.audioContext.decodeAudioData(copy, resolve, reject);
-          if (maybePromise && typeof maybePromise.then === 'function') maybePromise.then(resolve).catch(reject);
-        } catch (err) {
-          reject(err);
-        }
-      });
-    }
-
-    async function getQuestionAudioFromBackend(question) {
-      const result = await jsonpRequest(UKCD_BACKEND_WEB_APP_URL, {
-        action: 'tts',
-        text: question
-      }, 26000);
-
-      if (!result || !result.ok || !result.audioBase64) {
-        throw new Error(result && result.message ? result.message : 'No interviewer audio received.');
-      }
-      return result;
-    }
-
-    function base64ToArrayBuffer(base64) {
-      const clean = String(base64 || '').replace(/\s/g, '');
-      const binary = atob(clean);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      return bytes.buffer;
-    }
-
-    function base64ToBlob(base64, mimeType) {
-      const buffer = base64ToArrayBuffer(base64);
-      return new Blob([buffer], { type: mimeType || 'audio/wav' });
-    }
-
-    function browserSpeechFallback(question) {
-      return new Promise(resolve => {
-        try {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(question);
-          utterance.lang = 'en-GB';
-          utterance.rate = 0.92;
-          utterance.pitch = 1;
-          utterance.onend = resolve;
-          utterance.onerror = resolve;
-          window.speechSynthesis.speak(utterance);
-          setTimeout(resolve, Math.max(5000, question.length * 95));
-        } catch (err) {
-          debug('Browser speech fallback warning: ' + err.message);
-          resolve();
-        }
-      });
-    }
-
-    function resetAnswerCapture() {
-      state.answerFinal = '';
-      state.answerInterim = '';
-      state.answerStartedAt = null;
-      state.lastSpeechAt = null;
-      state.completingAnswer = false;
-      if (state.silenceTimer) clearInterval(state.silenceTimer);
-    }
-
-    function startListeningWindow() {
-      state.phase = 'listening';
-      state.answerStartedAt = Date.now();
-      state.lastSpeechAt = Date.now();
-      state.answerFinal = '';
-      state.answerInterim = '';
-      $('statusText').textContent = state.recognitionSupported ? 'Listening...' : 'Please answer now. Your voice is being recorded.';
-      $('listeningBars').classList.remove('hidden');
-      startRecognitionLoop();
-
-      state.silenceTimer = setInterval(() => {
-        if (state.phase !== 'listening' || state.completingAnswer) return;
-        const now = Date.now();
-        const elapsed = now - state.answerStartedAt;
-        const transcript = getCurrentTranscript();
-        const hasTranscript = transcript.trim().length >= MIN_TRANSCRIPT_CHARS;
-        const silence = now - state.lastSpeechAt;
-
-        if (hasTranscript && elapsed >= MIN_ANSWER_MS && silence >= SILENCE_MS) {
-          completeCurrentAnswer('silence');
-          return;
-        }
-
-        if (elapsed >= MAX_ANSWER_MS) {
-          completeCurrentAnswer('max-time');
-        }
-      }, 400);
-    }
-
-    function getCurrentTranscript() {
-      return (state.answerFinal + ' ' + state.answerInterim).replace(/\s+/g, ' ').trim();
-    }
-
-    async function completeCurrentAnswer(reason) {
-      if (state.completingAnswer) return;
-      state.completingAnswer = true;
-      if (state.silenceTimer) clearInterval(state.silenceTimer);
-      $('listeningBars').classList.add('hidden');
-
-      let transcript = getCurrentTranscript();
-      state.phase = 'processing-answer';
-
-      if (!transcript || transcript.length < MIN_TRANSCRIPT_CHARS) {
-        if (state.recognitionSupported && state.retryCountForQuestion < 1) {
-          state.retryCountForQuestion += 1;
-          $('statusText').textContent = 'We could not clearly capture your answer. The question will be repeated.';
-          await wait(1400);
-          state.completingAnswer = false;
-          await repeatCurrentQuestion();
-          return;
-        }
-        transcript = 'No clear transcript captured. Voice response is included in the recorded interview.';
-      }
-
-      $('statusText').textContent = 'Answer captured.';
-      state.responses.push({
-        question: state.currentQuestion,
-        answer: transcript,
-        focusArea: state.currentFocus,
-        captureReason: reason
-      });
-      $('progressFill').style.width = Math.round((state.questionNumber / TOTAL_QUESTIONS) * 100) + '%';
-      await wait(900);
-
-      if (state.questionNumber >= TOTAL_QUESTIONS) {
-        await finishInterview('complete');
-        return;
-      }
-
-      $('statusText').textContent = 'Preparing next question...';
-      const next = await getNextQuestionFromBackend(state.currentQuestion, transcript);
-      state.completingAnswer = false;
-      await askQuestion(next.question, next.focusArea);
-    }
-
-    async function getNextQuestionFromBackend(currentQuestion, answer) {
-      try {
-        const result = await jsonpRequest(UKCD_BACKEND_WEB_APP_URL, {
-          action: 'nextQuestion',
-          student: JSON.stringify(state.student),
-          responses: JSON.stringify(state.responses.slice(-5)),
-          currentQuestion,
-          answer,
-          currentIndex: state.questionNumber
-        }, 12000);
-
-        if (result && result.ok && result.question) {
-          return { question: result.question, focusArea: result.focusArea || 'Suitability' };
-        }
-        debug('Backend next question fallback: ' + JSON.stringify(result));
-      } catch (err) {
-        debug('Next question request warning: ' + err.message);
-      }
-
-      const fallback = fallbackQuestions[state.questionNumber] || fallbackQuestions[fallbackQuestions.length - 1];
-      return { question: fallback, focusArea: 'Suitability' };
-    }
-
-    function jsonpRequest(baseUrl, params, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const callbackName = 'ukcd_jsonp_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-        const url = new URL(baseUrl);
-        Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
-        url.searchParams.set('callback', callbackName);
-
-        const script = document.createElement('script');
-        let done = false;
-        const timer = setTimeout(() => cleanup(() => reject(new Error('The interview question request timed out.'))), timeoutMs || 12000);
-
-        window[callbackName] = data => cleanup(() => resolve(data));
-        script.onerror = () => cleanup(() => reject(new Error('Could not prepare the next question.')));
-        script.src = url.toString();
-        document.body.appendChild(script);
-
-        function cleanup(next) {
-          if (done) return;
-          done = true;
-          clearTimeout(timer);
-          try { delete window[callbackName]; } catch (e) { window[callbackName] = undefined; }
-          if (script.parentNode) script.parentNode.removeChild(script);
-          next();
-        }
-      });
-    }
-
-    async function finishInterview(mode) {
-      if (state.phase === 'submitting' || state.phase === 'ended') return;
-      state.phase = 'submitting';
-      window.speechSynthesis.cancel();
-      if (state.currentTtsSource) { try { state.currentTtsSource.stop(); } catch (e) {} state.currentTtsSource = null; }
-      if (state.silenceTimer) clearInterval(state.silenceTimer);
-      if (state.timerHandle) clearInterval(state.timerHandle);
-      if (state.recordingWatchdog) clearInterval(state.recordingWatchdog);
-      try { if (state.recognition) state.recognition.stop(); } catch (e) {}
-
-      showScreen('submitScreen');
-      try {
-        state.recordedBlob = await stopRecordingAndCamera();
-        const videoPack = await blobToBase64Pack(state.recordedBlob);
-        const summary = buildInternalSummary(mode);
-        const payload = {
-          student: state.student,
-          responses: state.responses.length ? state.responses : [{ question: state.currentQuestion || 'Interview ended', answer: 'Interview ended before an answer was captured.' }],
-          summary,
-          videoBase64: videoPack.base64,
-          videoMimeType: normaliseVideoMimeType(state.recordedBlob.type || 'video/webm'),
-          videoOriginalMimeType: state.recordedBlob.type || 'video/webm',
-          videoSizeBytes: state.recordedBlob.size || 0,
-          recordingDebug: DEBUG ? {
-            chunks: state.chunks.length,
-            totalRecordedBytes: state.totalRecordedBytes,
-            recorderMimeType: state.recorder ? state.recorder.mimeType : '',
-            dataUrlPrefix: videoPack.prefix
-          } : undefined
-        };
-        debug('Submitting payload. Video size: ' + (state.recordedBlob.size || 0) + ', base64 length: ' + videoPack.base64.length + ', mime: ' + payload.videoMimeType);
-        await submitInterview(payload);
-        showCompletion(true);
-      } catch (err) {
-        debug('Submit error: ' + (err && err.stack ? err.stack : err));
-        showCompletion(false);
-      }
-    }
-
-    function buildInternalSummary(mode) {
-      const answerText = state.responses.map(r => r.answer || '').join(' ');
-      const words = answerText.trim() ? answerText.trim().split(/\s+/).length : 0;
-      return [
-        'Interview status: ' + (mode === 'complete' ? 'Completed' : 'Ended by applicant'),
-        'Questions answered: ' + state.responses.length,
-        'Captured transcript word count: ' + words,
-        'Review note: This is an automated pilot summary for internal review. Final decisions should be made through the agreed review process.'
-      ].join('\n');
-    }
-
-    function stopRecordingAndCamera() {
-      return new Promise(resolve => {
-        const recorder = state.recorder;
-        if (!recorder) {
-          stopTracks();
-          resolve(new Blob([], { type: 'video/webm' }));
-          return;
-        }
-
-        let finished = false;
-        const finish = () => {
-          if (finished) return;
-          finished = true;
-          setTimeout(() => {
-            const mimeType = recorder.mimeType || 'video/webm';
-            const blob = new Blob(state.chunks || [], { type: mimeType });
-            debug('Final recording size: ' + blob.size + ', chunks: ' + state.chunks.length + ', type: ' + mimeType);
-            stopTracks();
-            resolve(blob);
-          }, 450);
-        };
-
-        recorder.addEventListener('stop', finish, { once: true });
-        try {
-          if (recorder.state === 'recording') {
-            recorder.requestData();
-            setTimeout(() => {
-              try { if (recorder.state !== 'inactive') recorder.stop(); else finish(); }
-              catch (err) { debug('Recorder stop warning: ' + err.message); finish(); }
-            }, 950);
-          } else {
-            finish();
-          }
-        } catch (err) {
-          debug('Recorder finalisation warning: ' + err.message);
-          finish();
-        }
-      });
-    }
-
-    function stopTracks() {
-      const tracks = new Set();
-      if (state.stream) state.stream.getTracks().forEach(track => tracks.add(track));
-      if (state.mixedStream) state.mixedStream.getTracks().forEach(track => tracks.add(track));
-      tracks.forEach(track => {
-        try { track.stop(); } catch (e) {}
-      });
-    }
-
-    function blobToBase64Pack(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const dataUrl = String(reader.result || '');
-          // Important: MP4 data URLs can contain a comma inside the codecs section,
-          // for example: data:video/mp4;codecs=avc1...,mp4a...;base64,AAAA...
-          // Use the LAST comma so only the actual base64 payload is extracted.
-          const comma = dataUrl.lastIndexOf(',');
-          resolve({
-            base64: comma === -1 ? '' : dataUrl.slice(comma + 1),
-            prefix: comma === -1 ? dataUrl.slice(0, 120) : dataUrl.slice(0, comma + 1)
-          });
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    function normaliseVideoMimeType(mimeType) {
-      const value = String(mimeType || '').toLowerCase();
-      if (value.includes('mp4')) return 'video/mp4';
-      if (value.includes('webm')) return 'video/webm';
-      return 'application/octet-stream';
-    }
-
-    async function submitInterview(payload) {
-      await fetch(UKCD_BACKEND_WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify(payload)
-      });
-      return true;
-    }
-
-    function showCompletion(success) {
-      state.phase = 'ended';
-      showScreen('completeScreen');
-      const ref = buildReferenceId();
-      $('referenceId').textContent = 'Reference ID: ' + ref;
-      if (!success) {
-        $('completeTitle').textContent = 'Interview Submitted';
-        $('completeText').textContent = 'Thank you. Your interview has been submitted. If confirmation is required, please contact your support team with the reference ID below.';
-      }
-    }
-
-    function buildReferenceId() {
-      const id = (state.student.studentId || 'UKCD').replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase() || 'UKCD';
-      const stamp = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 12);
-      return 'UKCD-' + id + '-' + stamp;
-    }
-
-    function updateTimer() {
-      const elapsed = Math.max(0, Math.floor((Date.now() - state.startedAt) / 1000));
-      const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
-      const ss = String(elapsed % 60).padStart(2, '0');
-      $('timer').textContent = mm + ':' + ss;
-    }
-
-    function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-    function toast(message) {
-      $('toast').textContent = message;
-      $('toast').classList.remove('hidden');
-      clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => $('toast').classList.add('hidden'), 4500);
-    }
-
-    function debug(message) {
-      if (!DEBUG) return;
-      const line = '[' + new Date().toLocaleTimeString() + '] ' + message;
-      $('debugPanel').textContent += line + '\n';
-      $('debugPanel').scrollTop = $('debugPanel').scrollHeight;
-      console.log('[UKCD]', message);
-    }
-  </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script type="module" src="src/app.js"></script>
 </body>
 </html>
