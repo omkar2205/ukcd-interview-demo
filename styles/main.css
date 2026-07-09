@@ -1,19 +1,29 @@
 :root {
   --navy: #071b33;
+  --ink: #142235;
   --cream: #f7f1e4;
   --ivory: #fffaf1;
   --gold: #c4a04f;
   --muted-gold: #d8c18b;
+  --border-soft: rgba(216, 193, 139, 0.38);
+  --shadow-soft: 0 24px 70px rgba(7, 27, 51, 0.14);
+  --shadow-deep: 0 30px 90px rgba(7, 27, 51, 0.18);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background:
+    radial-gradient(circle at 12% 8%, rgba(196, 160, 79, 0.18), transparent 28rem),
+    radial-gradient(circle at 92% 12%, rgba(7, 27, 51, 0.10), transparent 26rem),
     linear-gradient(135deg, rgba(7, 27, 51, 0.05), transparent 28%),
-    linear-gradient(225deg, rgba(196, 160, 79, 0.16), transparent 32%),
+    linear-gradient(225deg, rgba(196, 160, 79, 0.14), transparent 32%),
     var(--cream);
 }
 
@@ -28,25 +38,42 @@ button:disabled {
   opacity: 0.55;
 }
 
+main {
+  width: min(100%, 1600px) !important;
+}
+
 .screen {
   display: none;
+  animation: screenFade 220ms ease both;
 }
 
 .screen.is-active {
   display: block;
 }
 
+@keyframes screenFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .app-shell,
 .app-card,
 .hero-panel,
-.video-frame {
-  border-radius: 8px;
+.video-frame,
+.question-card {
+  border-radius: 14px;
+}
+
+.app-shell {
+  position: sticky;
+  top: 1rem;
+  z-index: 50;
 }
 
 .app-card {
-  border: 1px solid rgba(216, 193, 139, 0.38);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 24px 70px rgba(7, 27, 51, 0.14);
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: var(--shadow-soft);
 }
 
 .brand-mark {
@@ -54,10 +81,11 @@ button:disabled {
   height: 3.5rem;
   width: 3.5rem;
   place-items: center;
-  border-radius: 8px;
+  border-radius: 14px;
   border: 1px solid rgba(216, 193, 139, 0.42);
   background: linear-gradient(145deg, #071b33, #122f51);
   color: #f0dfaa;
+  box-shadow: 0 14px 34px rgba(7, 27, 51, 0.20);
 }
 
 .brand-mark svg {
@@ -67,18 +95,34 @@ button:disabled {
 }
 
 .hero-panel {
+  position: relative;
+  isolation: isolate;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 38%),
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.13), transparent 18rem),
+    radial-gradient(circle at 88% 78%, rgba(196, 160, 79, 0.18), transparent 20rem),
     linear-gradient(155deg, #071b33 0%, #102a43 100%);
+}
+
+.hero-panel::after {
+  content: '';
+  position: absolute;
+  inset: auto -6rem -8rem auto;
+  height: 22rem;
+  width: 22rem;
+  border-radius: 999px;
+  background: rgba(196, 160, 79, 0.14);
+  filter: blur(2px);
+  z-index: -1;
 }
 
 .hero-step {
   display: grid;
   gap: 0.45rem;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.13);
   background: rgba(255, 255, 255, 0.08);
   padding: 1rem;
+  backdrop-filter: blur(14px);
 }
 
 .hero-step svg {
@@ -95,7 +139,7 @@ button:disabled {
 .hero-step span {
   font-size: 0.78rem;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.70);
 }
 
 .eyebrow {
@@ -111,7 +155,7 @@ button:disabled {
   color: var(--navy);
   font-size: clamp(2rem, 4vw, 2.6rem);
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   line-height: 1.05;
 }
 
@@ -128,10 +172,10 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 0.78rem 1.05rem;
   font-weight: 850;
-  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease, border-color 150ms ease;
 }
 
 .btn svg {
@@ -172,13 +216,17 @@ button:disabled {
   padding: 0.5rem 0.75rem;
 }
 
+.check-row,
+.readiness-row {
+  border-radius: 12px;
+  border: 1px solid rgba(216, 193, 139, 0.36);
+  background: var(--ivory);
+}
+
 .check-row {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  border-radius: 8px;
-  border: 1px solid rgba(216, 193, 139, 0.36);
-  background: var(--ivory);
   padding: 0.95rem;
   color: var(--navy);
   font-weight: 750;
@@ -203,13 +251,14 @@ button:disabled {
 .field select {
   min-height: 3rem;
   width: 100%;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid rgba(216, 193, 139, 0.56);
   background: #fff;
   color: #142235;
   font-weight: 600;
   outline: none;
   padding: 0.7rem 0.85rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .field input:focus,
@@ -226,6 +275,13 @@ button:disabled {
 
 .video-frame {
   min-height: 30rem;
+  overflow: hidden;
+  border: 1px solid rgba(7, 27, 51, 0.10);
+}
+
+.video-frame video {
+  display: block;
+  background: #071b33;
 }
 
 .video-placeholder {
@@ -255,9 +311,6 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-radius: 8px;
-  border: 1px solid rgba(216, 193, 139, 0.36);
-  background: var(--ivory);
   padding: 1rem;
 }
 
@@ -290,9 +343,10 @@ button:disabled {
 }
 
 .question-card {
-  border-radius: 8px;
   border: 1px solid rgba(216, 193, 139, 0.36);
-  background: linear-gradient(180deg, #fffaf1, #fff);
+  background:
+    radial-gradient(circle at top right, rgba(196, 160, 79, 0.12), transparent 16rem),
+    linear-gradient(180deg, #fffaf1, #fff);
 }
 
 .status-dot {
@@ -370,7 +424,7 @@ button:disabled {
   right: 1.25rem;
   z-index: 80;
   max-width: min(28rem, calc(100vw - 2.5rem));
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--navy);
   color: #fff;
   box-shadow: 0 18px 42px rgba(7, 27, 51, 0.26);
@@ -384,7 +438,7 @@ button:disabled {
   margin: 1rem 0 0;
   max-height: 14rem;
   overflow: auto;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px dashed rgba(7, 27, 51, 0.3);
   background: rgba(255, 255, 255, 0.82);
   color: var(--navy);
@@ -394,7 +448,106 @@ button:disabled {
   white-space: pre-wrap;
 }
 
+/* Desktop-first polish for laptops and PCs */
+@media (min-width: 1024px) {
+  body {
+    overflow: hidden;
+  }
+
+  main {
+    min-height: 100vh;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .app-shell {
+    min-height: 5.25rem;
+  }
+
+  #welcomeScreen,
+  #detailsScreen,
+  #checkScreen,
+  #interviewScreen,
+  #finalisingScreen,
+  #completeScreen {
+    padding-top: 1rem !important;
+    padding-bottom: 0 !important;
+  }
+
+  #welcomeScreen > div,
+  #checkScreen > div,
+  #interviewScreen > div,
+  #finalisingScreen .app-card,
+  #completeScreen .app-card {
+    min-height: calc(100vh - 7.75rem) !important;
+  }
+
+  #welcomeScreen > div {
+    grid-template-columns: minmax(0, 1.25fr) minmax(380px, 0.75fr) !important;
+  }
+
+  #checkScreen > div {
+    grid-template-columns: minmax(0, 1.35fr) minmax(390px, 0.65fr) !important;
+  }
+
+  #interviewScreen > div {
+    grid-template-columns: minmax(0, 1.55fr) minmax(420px, 0.75fr) !important;
+    align-items: stretch;
+  }
+
+  #checkScreen .video-frame,
+  #interviewScreen .video-frame {
+    min-height: clamp(520px, calc(100vh - 8rem), 720px);
+    aspect-ratio: auto;
+    box-shadow: var(--shadow-deep);
+  }
+
+  #interviewScreen .app-card {
+    min-height: clamp(520px, calc(100vh - 8rem), 720px);
+  }
+
+  #questionText {
+    font-size: clamp(2rem, 2.6vw, 3rem) !important;
+    line-height: 1.05 !important;
+  }
+
+  #detailsScreen .app-card {
+    min-height: calc(100vh - 7.75rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1280px) {
+  #detailsForm {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #welcomeScreen .hero-panel {
+    padding: clamp(2.8rem, 4vw, 4.5rem) !important;
+  }
+
+  #welcomeScreen h2 {
+    max-width: 14ch;
+  }
+}
+
+@media (min-width: 1440px) {
+  #interviewScreen > div {
+    grid-template-columns: minmax(0, 1.7fr) minmax(430px, 0.7fr) !important;
+  }
+
+  #checkScreen > div {
+    grid-template-columns: minmax(0, 1.5fr) minmax(410px, 0.6fr) !important;
+  }
+}
+
 @media (max-width: 1024px) {
+  .app-shell {
+    position: static;
+  }
+
   .video-frame {
     min-height: 22rem;
   }
