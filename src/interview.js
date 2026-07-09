@@ -123,13 +123,8 @@ export class InterviewController {
     try {
       const result = await this.api.getNextQuestion({
         student: this.student,
-        responses: this.responses.slice(-5),
-        currentQuestion: previousQuestion,
-        answer,
-        currentIndex: this.stageIndex,
-        stage: stage.key,
-        stagePrompt: stage.prompt,
-        fallbackQuestion: stage.fallbackQuestion
+        questionNumber: this.stageIndex + 1,
+        responses: this.responses
       });
 
       if (isSafeApplicantQuestion(result.question)) return result.question;
