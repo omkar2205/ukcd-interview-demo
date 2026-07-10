@@ -68,7 +68,6 @@ export class InterviewController {
     this.heardVoice = false;
     this.answerTimer = null;
     this.completingAnswer = false;
-    this.currentAudio = null;
   }
 
   async start() {
@@ -187,30 +186,10 @@ export class InterviewController {
   async playQuestionAudio(question) {
     const audio = await this.api.getQuestionAudio(question);
     const blob = base64ToBlob(audio.audioBase64, audio.mimeType);
-    const objectUrl = URL.createObjectURL(blob);
 
-    await new Promise((resolve, reject) => {
-      const player = new Audio(objectUrl);
-      this.currentAudio = player;
-      let completed = false;
-
-      // Route the TTS audio through the recorder's mix so it's captured
-      this.recorder.routeAudioElement(player);
-
-      const finish = (error) => {
-        if (completed) return;
-        completed = true;
-        URL.revokeObjectURL(objectUrl);
-        this.currentAudio = null;
-        if (error) reject(error);
-        else resolve();
-      };
-
-      player.onended = () => finish();
-      player.onerror = () => finish(new Error('Question audio could not be played.'));
-      player.play().catch(finish);
-      window.setTimeout(() => finish(), Math.max(5000, question.length * 100));
-    });
+    // Play through the recorder's Web Audio graph so the TTS voice
+    // is captured in the recording alongside the applicant's mic.
+    await this.recorder.playAndRecordAudio(blob);
   }
 
   browserSpeechFallback(question) {
@@ -388,7 +367,7 @@ export class InterviewController {
     window.clearInterval(this.answerTimer);
     window.clearInterval(this.timerHandle);
     window.speechSynthesis.cancel();
-    if (this.currentAudio) this.currentAudio.pause();
+    this.recorder.stopCurrentAudio();
     try { if (this.recognition) this.recognition.stop(); } catch (error) {}
 
     showScreen('finalisingScreen');
