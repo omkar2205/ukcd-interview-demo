@@ -18,6 +18,12 @@ export class ApplicantRecorder {
     this.totalBytes = 0;
     this.watchdog = null;
     this.monitor = null;
+
+    // Audio mixing: combine applicant mic + interviewer TTS into one recorded stream
+    this.audioContext = null;
+    this.mixedDestination = null;
+    this.micSource = null;
+    this.recordingStream = null;
   }
 
   async requestMedia() {
@@ -59,12 +65,83 @@ export class ApplicantRecorder {
     };
   }
 
+  /**
+   * Sets up the Web Audio mixing graph so both the applicant's microphone
+   * and the interviewer's TTS audio are recorded into a single stream.
+   */
+  _setupAudioMixing() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) {
+        this.debug('AudioContext not available; recording mic only');
+        return;
+      }
+
+      this.audioContext = new AudioCtx();
+      // Create a destination node whose stream we'll record from
+      this.mixedDestination = this.audioContext.createMediaStreamDestination();
+
+      // Connect the applicant's microphone to the mix
+      if (this.stream && this.stream.getAudioTracks().length > 0) {
+        this.micSource = this.audioContext.createMediaStreamSource(this.stream);
+        this.micSource.connect(this.mixedDestination);
+        this.debug('Mic audio connected to recording mix');
+      }
+
+      // Build the recording stream: video tracks from camera + mixed audio track
+      this.recordingStream = new MediaStream();
+      // Add video tracks from the original camera stream
+      this.stream.getVideoTracks().forEach((track) => {
+        this.recordingStream.addTrack(track);
+      });
+      // Add the mixed audio track (mic + any TTS routed through routeAudioElement)
+      this.mixedDestination.stream.getAudioTracks().forEach((track) => {
+        this.recordingStream.addTrack(track);
+      });
+
+      this.debug('Audio mixing setup complete', {
+        videoTracks: this.recordingStream.getVideoTracks().length,
+        audioTracks: this.recordingStream.getAudioTracks().length
+      });
+    } catch (error) {
+      this.debug('Audio mixing setup failed; falling back to mic-only', error.message);
+      this.recordingStream = null;
+    }
+  }
+
+  /**
+   * Route an Audio element (e.g. TTS playback) through the recording mix
+   * so the interviewer's voice is captured in the final video.
+   * The audio still plays through speakers as normal.
+   */
+  routeAudioElement(audioElement) {
+    if (!this.audioContext || !this.mixedDestination) {
+      this.debug('Audio mixing not available; TTS will not be in recording');
+      return;
+    }
+
+    try {
+      const source = this.audioContext.createMediaElementSource(audioElement);
+      // Connect to the mixed destination (for recording)
+      source.connect(this.mixedDestination);
+      // Also connect to speakers so the applicant can hear it
+      source.connect(this.audioContext.destination);
+      this.debug('TTS audio routed to recording mix and speakers');
+    } catch (error) {
+      this.debug('Could not route TTS audio to recording', error.message);
+    }
+  }
+
   start() {
     if (!window.MediaRecorder) throw new Error('Recording is not supported in this browser.');
     if (!this.stream) throw new Error('Camera and microphone are not ready.');
 
-    // Record only the applicant camera and microphone stream.
-    // Interviewer playback stays separate and is not mixed into the saved video.
+    // Set up audio mixing so interviewer voice is captured
+    this._setupAudioMixing();
+
+    // Record from the mixed stream (mic + TTS) if available, otherwise fall back to camera stream
+    const streamToRecord = this.recordingStream || this.stream;
+
     const mimeType = pickRecordingType();
     const options = {
       videoBitsPerSecond: 1200000,
@@ -74,7 +151,7 @@ export class ApplicantRecorder {
 
     this.chunks = [];
     this.totalBytes = 0;
-    this.recorder = new MediaRecorder(this.stream, options);
+    this.recorder = new MediaRecorder(streamToRecord, options);
 
     this.recorder.ondataavailable = (event) => {
       if (!event.data || event.data.size <= 0) return;
@@ -86,7 +163,10 @@ export class ApplicantRecorder {
     this.recorder.onerror = (event) => this.debug('Recorder warning', event.error || event);
     this.recorder.start(1000);
     this.watchdog = window.setInterval(() => this.requestData(), 2500);
-    this.debug('Recording started', { mimeType: this.recorder.mimeType || mimeType || 'default' });
+    this.debug('Recording started', {
+      mimeType: this.recorder.mimeType || mimeType || 'default',
+      mixedAudio: !!this.recordingStream
+    });
   }
 
   requestData() {
@@ -152,6 +232,18 @@ export class ApplicantRecorder {
   stopTracks() {
     if (this.monitor) this.monitor.stop();
     this.monitor = null;
+
+    // Clean up audio mixing
+    try { if (this.micSource) this.micSource.disconnect(); } catch (e) {}
+    this.micSource = null;
+
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close().catch((e) => this.debug('AudioContext close warning', e.message));
+    }
+    this.audioContext = null;
+    this.mixedDestination = null;
+    this.recordingStream = null;
+
     if (this.stream) this.stream.getTracks().forEach((track) => track.stop());
     this.stream = null;
   }
@@ -188,8 +280,6 @@ function createMicrophoneMonitor(stream, debug) {
   if (!AudioContextClass) return null;
 
   try {
-    // This lightweight level meter lets the interview move on after speech and silence,
-    // even in browsers where live speech recognition is unavailable.
     const context = new AudioContextClass();
     const analyser = context.createAnalyser();
     const source = context.createMediaStreamSource(stream);
