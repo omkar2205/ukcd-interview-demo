@@ -10,7 +10,7 @@ const SCREEN_IDS = [
 const SCREEN_LABELS = {
   welcomeScreen: 'Ready to begin',
   detailsScreen: 'Applicant details',
-  checkScreen: 'Readiness check',
+  checkScreen: 'Pre-interview lobby',
   interviewScreen: 'Recording',
   finalisingScreen: 'Finalising',
   completeScreen: 'Completed'
@@ -36,14 +36,19 @@ export function showScreen(screenId) {
 }
 
 export function setStatus(message, options = {}) {
-  $('statusText').textContent = message;
-  $('listeningBars').classList.toggle('hidden', options.listening !== true);
+  const statusText = $('statusText');
+  if (statusText) statusText.textContent = message;
+
+  const listeningBars = $('listeningBars');
+  if (listeningBars) listeningBars.classList.toggle('hidden', options.listening !== true && options.speaking !== true);
 
   const icon = $('statusIcon');
   if (icon) {
     icon.setAttribute('data-lucide', options.icon || (options.listening ? 'audio-lines' : 'loader-circle'));
     if (window.lucide) window.lucide.createIcons();
   }
+
+  updateAvatarState(message, options);
 }
 
 export function setReadiness(cameraText, micText) {
@@ -114,6 +119,31 @@ export function debug(message, data) {
   panel.textContent += `${line}\n`;
   panel.scrollTop = panel.scrollHeight;
   console.debug('[UKCD]', message, data || '');
+}
+
+function updateAvatarState(message, options) {
+  const avatarStage = $('avatarStage');
+  if (!avatarStage) return;
+
+  avatarStage.classList.remove('preparing', 'is-speaking', 'is-listening', 'is-complete');
+
+  const text = String(message || '').toLowerCase();
+  if (options.listening || text.includes('listening') || text.includes('answer')) {
+    avatarStage.classList.add('is-listening');
+    return;
+  }
+
+  if (options.speaking || text.includes('question being asked') || text.includes('played again')) {
+    avatarStage.classList.add('is-speaking');
+    return;
+  }
+
+  if (text.includes('captured') || text.includes('complete')) {
+    avatarStage.classList.add('is-complete');
+    return;
+  }
+
+  avatarStage.classList.add('preparing');
 }
 
 function safeStringify(value) {
