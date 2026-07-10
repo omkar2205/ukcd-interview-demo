@@ -99,25 +99,20 @@ async function startInterview() {
 function collectStudentDetails() {
   const student = {
     fullName: value('fullName'),
-    email: value('email'),
-    phone: value('phone'),
     studentId: value('studentId'),
-    programme: value('programme'),
-    studyLevel: value('studyLevel'),
-    country: value('country'),
-    intake: value('intake')
+    email: '',
+    phone: '',
+    programme: '',
+    studyLevel: '',
+    country: '',
+    intake: ''
   };
 
   const errors = [];
   const invalidFields = [];
   const required = [
-    ['fullName', 'Please enter your full name.'],
-    ['email', 'Please enter your email address.'],
-    ['studentId', 'Please enter your student ID.'],
-    ['programme', 'Please enter your programme.'],
-    ['studyLevel', 'Please select your study level.'],
-    ['country', 'Please enter your country of residence.'],
-    ['intake', 'Please enter your intake.']
+    ['fullName', 'Please enter your applicant name.'],
+    ['studentId', 'Please enter your applicant ID.']
   ];
 
   required.forEach(([field, message]) => {
@@ -127,23 +122,13 @@ function collectStudentDetails() {
     }
   });
 
-  if (student.fullName && student.fullName.trim().split(/\s+/).length < 2) {
-    errors.push('Please enter your full name as shown on your application.');
+  if (student.fullName && student.fullName.length < 2) {
+    errors.push('Please enter a valid applicant name.');
     invalidFields.push('fullName');
   }
 
-  if (student.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(student.email)) {
-    errors.push('Please enter a valid email address.');
-    invalidFields.push('email');
-  }
-
-  if (student.phone && !/^[+()\d\s-]{7,22}$/.test(student.phone)) {
-    errors.push('Please enter a valid phone number, including country code where possible.');
-    invalidFields.push('phone');
-  }
-
-  if (student.studentId && !/^[a-z0-9-_/]{3,30}$/i.test(student.studentId)) {
-    errors.push('Please check your student ID contains only letters, numbers, hyphens, underscores, or slashes.');
+  if (student.studentId && !/^[a-z0-9-_/]{2,30}$/i.test(student.studentId)) {
+    errors.push('Please check your applicant ID contains only letters, numbers, hyphens, underscores, or slashes.');
     invalidFields.push('studentId');
   }
 
@@ -156,5 +141,6 @@ function collectStudentDetails() {
 }
 
 function value(id) {
-  return $(id).value.trim();
+  const element = $(id);
+  return element ? element.value.trim() : '';
 }
