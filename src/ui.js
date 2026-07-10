@@ -16,6 +16,18 @@ const SCREEN_LABELS = {
   completeScreen: 'Completed'
 };
 
+// SVG progress ring circumference (r=92, C=2πr)
+const RING_CIRCUMFERENCE = 2 * Math.PI * 92;
+
+// Status icon SVG templates (inline, no Lucide dependency)
+const STATUS_ICONS = {
+  'loader-circle': '<svg class="status-icon spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+  'volume-2': '<svg class="status-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+  'audio-lines': '<svg class="status-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>',
+  'check': '<svg class="status-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  'rotate-ccw': '<svg class="status-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>'
+};
+
 export const DEBUG = new URLSearchParams(window.location.search).get('debug') === 'true';
 
 export function $(id) {
@@ -23,7 +35,6 @@ export function $(id) {
 }
 
 export function initUi() {
-  if (window.lucide) window.lucide.createIcons();
   if (DEBUG) $('debugPanel').classList.remove('hidden');
   showScreen('welcomeScreen');
 }
@@ -32,7 +43,6 @@ export function showScreen(screenId) {
   SCREEN_IDS.forEach((id) => $(id).classList.toggle('is-active', id === screenId));
   $('sessionLabel').textContent = SCREEN_LABELS[screenId] || 'In progress';
   $('sessionDot').classList.toggle('is-recording', screenId === 'interviewScreen');
-  if (window.lucide) window.lucide.createIcons();
 }
 
 export function setStatus(message, options = {}) {
@@ -46,10 +56,12 @@ export function setStatus(message, options = {}) {
   const listeningBars = $('listeningBars');
   if (listeningBars) listeningBars.classList.toggle('hidden', !(isSpeaking || isListening));
 
-  const icon = $('statusIcon');
-  if (icon) {
-    icon.setAttribute('data-lucide', options.icon || (isListening ? 'audio-lines' : 'loader-circle'));
-    if (window.lucide) window.lucide.createIcons();
+  // Update status icon
+  const iconContainer = $('statusIcon');
+  if (iconContainer) {
+    const iconKey = options.icon || (isListening ? 'audio-lines' : 'loader-circle');
+    const svg = STATUS_ICONS[iconKey] || STATUS_ICONS['loader-circle'];
+    iconContainer.outerHTML = svg.replace('class="status-icon', `id="statusIcon" class="status-icon`);
   }
 
   updateAvatarState(message, { ...options, speaking: isSpeaking, listening: isListening });
@@ -64,13 +76,24 @@ export function renderQuestion({ question, stageLabel, index, total }) {
   $('questionCounter').textContent = `Question ${index} of ${total}`;
   $('stageLabel').textContent = stageLabel || 'Interview Question';
   $('questionText').textContent = question;
-  $('progressFill').style.width = `${Math.round(((index - 1) / total) * 100)}%`;
   $('instructionText').textContent = 'Answer naturally after the question has been asked.';
+
+  // Update circular progress ring: show progress up to (index-1)/total
+  updateProgressRing((index - 1) / total);
+
   setStatus('Preparing question...', { icon: 'loader-circle' });
 }
 
 export function markQuestionComplete(index, total) {
-  $('progressFill').style.width = `${Math.round((index / total) * 100)}%`;
+  // Update circular progress ring to index/total
+  updateProgressRing(index / total);
+}
+
+function updateProgressRing(fraction) {
+  const arc = $('progressArc');
+  if (!arc) return;
+  const offset = RING_CIRCUMFERENCE * (1 - Math.min(1, Math.max(0, fraction)));
+  arc.style.strokeDashoffset = offset;
 }
 
 export function updateTimer(startedAt) {
