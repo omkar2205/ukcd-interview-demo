@@ -7,7 +7,7 @@
   --muted-gold: #d8c18b;
   --border-soft: rgba(216, 193, 139, 0.38);
   --shadow-soft: 0 24px 70px rgba(7, 27, 51, 0.14);
-  --shadow-deep: 0 30px 90px rgba(7, 27, 51, 0.18);
+  --shadow-deep: 0 30px 90px rgba(7, 27, 51, 0.20);
 }
 
 * {
@@ -60,8 +60,10 @@ main {
 .app-card,
 .hero-panel,
 .video-frame,
-.question-card {
-  border-radius: 14px;
+.question-card,
+.avatar-stage,
+.meeting-control-bar {
+  border-radius: 16px;
 }
 
 .app-shell {
@@ -249,15 +251,15 @@ main {
 
 .field input,
 .field select {
-  min-height: 3rem;
+  min-height: 3.15rem;
   width: 100%;
   border-radius: 12px;
   border: 1px solid rgba(216, 193, 139, 0.56);
   background: #fff;
   color: #142235;
-  font-weight: 600;
+  font-weight: 650;
   outline: none;
-  padding: 0.7rem 0.85rem;
+  padding: 0.75rem 0.9rem;
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
@@ -332,14 +334,30 @@ main {
 }
 
 .question-pill,
-.timer {
+.timer,
+.recording-chip {
   border-radius: 999px;
   border: 1px solid rgba(216, 193, 139, 0.42);
-  background: var(--ivory);
+  background: rgba(255, 250, 241, 0.92);
   color: var(--navy);
   font-size: 0.82rem;
   font-weight: 900;
   padding: 0.55rem 0.85rem;
+}
+
+.recording-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.recording-chip span {
+  height: 0.55rem;
+  width: 0.55rem;
+  border-radius: 999px;
+  background: #b94141;
+  box-shadow: 0 0 0 6px rgba(185, 65, 65, 0.12);
+  animation: pulse 1.4s infinite;
 }
 
 .question-card {
@@ -390,6 +408,264 @@ main {
 @keyframes bars {
   0%, 100% { transform: scaleY(0.55); opacity: 0.52; }
   50% { transform: scaleY(1); opacity: 1; }
+}
+
+/* Meeting-style interview room */
+.meeting-room {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 1rem;
+}
+
+.avatar-stage {
+  position: relative;
+  display: grid;
+  min-height: 34rem;
+  overflow: hidden;
+  border: 1px solid rgba(216, 193, 139, 0.30);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(196, 160, 79, 0.18), transparent 24rem),
+    radial-gradient(circle at 18% 80%, rgba(255, 255, 255, 0.08), transparent 20rem),
+    linear-gradient(145deg, #071b33 0%, #0d2748 54%, #071b33 100%);
+  box-shadow: var(--shadow-deep);
+  color: #fff;
+  isolation: isolate;
+}
+
+.avatar-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent 82%);
+  pointer-events: none;
+}
+
+.meeting-topbar {
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  top: 1.25rem;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.avatar-content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(1.2rem, 2vw, 2rem);
+  min-height: 100%;
+  padding: 5.5rem 2rem 7.5rem;
+  text-align: center;
+}
+
+.avatar-orb {
+  position: relative;
+  display: grid;
+  height: clamp(12rem, 22vw, 19rem);
+  width: clamp(12rem, 22vw, 19rem);
+  place-items: center;
+}
+
+.avatar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(216, 193, 139, 0.45);
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04) 62%, transparent 63%),
+    conic-gradient(from 45deg, rgba(196, 160, 79, 0.9), rgba(255, 255, 255, 0.15), rgba(196, 160, 79, 0.7), rgba(255, 255, 255, 0.1), rgba(196, 160, 79, 0.9));
+  box-shadow: 0 0 0 18px rgba(255, 255, 255, 0.035), 0 30px 80px rgba(0, 0, 0, 0.28);
+  opacity: 0.92;
+}
+
+.avatar-face {
+  position: relative;
+  display: grid;
+  height: 66%;
+  width: 66%;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(145deg, rgba(255, 250, 241, 0.98), rgba(232, 216, 173, 0.96));
+  color: var(--navy);
+  box-shadow: inset 0 0 35px rgba(7, 27, 51, 0.12);
+}
+
+.avatar-face svg {
+  height: 43%;
+  width: 43%;
+  stroke-width: 1.8;
+}
+
+.avatar-mouth {
+  position: absolute;
+  bottom: 28%;
+  height: 0.34rem;
+  width: 1.7rem;
+  border-radius: 999px;
+  background: rgba(7, 27, 51, 0.42);
+  transform-origin: center;
+}
+
+.avatar-stage.is-speaking .avatar-ring {
+  animation: avatarGlow 1.2s infinite ease-in-out;
+}
+
+.avatar-stage.is-speaking .avatar-mouth {
+  animation: mouthTalk 420ms infinite ease-in-out;
+}
+
+.avatar-stage.is-listening .avatar-ring {
+  box-shadow: 0 0 0 18px rgba(196, 160, 79, 0.07), 0 30px 80px rgba(0, 0, 0, 0.28);
+}
+
+@keyframes avatarGlow {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.035); filter: brightness(1.16); }
+}
+
+@keyframes mouthTalk {
+  0%, 100% { transform: scaleY(0.55); }
+  50% { transform: scaleY(2.1); }
+}
+
+.avatar-copy {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  width: min(100%, 56rem);
+}
+
+.avatar-stage .eyebrow {
+  color: #ead9a2;
+}
+
+.avatar-stage-label {
+  font-size: clamp(1.25rem, 2vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.question-caption {
+  width: min(100%, 55rem);
+  border: 1px solid rgba(216, 193, 139, 0.30);
+  border-radius: 18px;
+  background: rgba(255, 250, 241, 0.10);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.16);
+}
+
+.question-caption span {
+  display: inline-flex;
+  margin-bottom: 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(216, 193, 139, 0.32);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ead9a2;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  padding: 0.35rem 0.65rem;
+  text-transform: uppercase;
+}
+
+.question-caption p {
+  color: #fff;
+  font-size: clamp(1.65rem, 3vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.avatar-status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid rgba(216, 193, 139, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  padding: 0.75rem 1rem;
+  backdrop-filter: blur(16px);
+}
+
+.self-view {
+  position: absolute;
+  right: 1.35rem;
+  bottom: 1.35rem;
+  z-index: 5;
+  height: clamp(8.5rem, 18vh, 13rem);
+  width: clamp(13rem, 24vw, 22rem);
+  overflow: hidden;
+  border: 2px solid rgba(255, 250, 241, 0.86);
+  border-radius: 18px;
+  background: #071b33;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.36);
+}
+
+.self-view video {
+  display: block;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.self-view-label {
+  position: absolute;
+  left: 0.65rem;
+  bottom: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  background: rgba(7, 27, 51, 0.76);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.42rem 0.7rem;
+  backdrop-filter: blur(8px);
+}
+
+.self-view-label span {
+  height: 0.48rem;
+  width: 0.48rem;
+  border-radius: 999px;
+  background: #2e7d5b;
+}
+
+.meeting-control-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid rgba(216, 193, 139, 0.38);
+  background: rgba(7, 27, 51, 0.94);
+  box-shadow: var(--shadow-soft);
+  color: #fff;
+  padding: 1rem;
+}
+
+.control-progress {
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.meeting-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .final-icon,
@@ -448,7 +724,6 @@ main {
   white-space: pre-wrap;
 }
 
-/* Desktop-first polish for laptops and PCs */
 @media (min-width: 1024px) {
   body {
     overflow: hidden;
@@ -474,72 +749,57 @@ main {
     padding-bottom: 0 !important;
   }
 
-  #welcomeScreen > div,
-  #checkScreen > div,
-  #interviewScreen > div,
+  .welcome-grid,
+  .lobby-layout,
+  .meeting-room,
   #finalisingScreen .app-card,
   #completeScreen .app-card {
     min-height: calc(100vh - 7.75rem) !important;
   }
 
-  #welcomeScreen > div {
-    grid-template-columns: minmax(0, 1.25fr) minmax(380px, 0.75fr) !important;
-  }
-
-  #checkScreen > div {
-    grid-template-columns: minmax(0, 1.35fr) minmax(390px, 0.65fr) !important;
-  }
-
-  #interviewScreen > div {
-    grid-template-columns: minmax(0, 1.55fr) minmax(420px, 0.75fr) !important;
-    align-items: stretch;
-  }
-
-  #checkScreen .video-frame,
-  #interviewScreen .video-frame {
-    min-height: clamp(520px, calc(100vh - 8rem), 720px);
-    aspect-ratio: auto;
-    box-shadow: var(--shadow-deep);
-  }
-
-  #interviewScreen .app-card {
-    min-height: clamp(520px, calc(100vh - 8rem), 720px);
-  }
-
-  #questionText {
-    font-size: clamp(2rem, 2.6vw, 3rem) !important;
-    line-height: 1.05 !important;
-  }
-
-  #detailsScreen .app-card {
+  .details-shell {
     min-height: calc(100vh - 7.75rem);
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
+
+  .lobby-layout {
+    grid-template-rows: 1fr auto !important;
+  }
+
+  .lobby-preview {
+    min-height: clamp(430px, calc(100vh - 17rem), 630px);
+    box-shadow: var(--shadow-deep);
+  }
+
+  .lobby-controls {
+    display: grid;
+    grid-template-columns: 0.9fr 1.25fr auto;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  #interviewScreen .meeting-room {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .avatar-stage {
+    min-height: clamp(520px, calc(100vh - 13rem), 740px);
+  }
 }
 
 @media (min-width: 1280px) {
-  #detailsForm {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  #welcomeScreen .hero-panel {
-    padding: clamp(2.8rem, 4vw, 4.5rem) !important;
-  }
-
-  #welcomeScreen h2 {
-    max-width: 14ch;
+  .avatar-content {
+    padding-left: 4rem;
+    padding-right: 4rem;
   }
 }
 
 @media (min-width: 1440px) {
-  #interviewScreen > div {
-    grid-template-columns: minmax(0, 1.7fr) minmax(430px, 0.7fr) !important;
-  }
-
-  #checkScreen > div {
-    grid-template-columns: minmax(0, 1.5fr) minmax(410px, 0.6fr) !important;
+  .self-view {
+    width: 24rem;
+    height: 14rem;
   }
 }
 
@@ -551,11 +811,60 @@ main {
   .video-frame {
     min-height: 22rem;
   }
+
+  .lobby-controls,
+  .meeting-control-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .meeting-actions {
+    justify-content: stretch;
+  }
+
+  .meeting-actions .btn {
+    flex: 1;
+  }
+
+  .avatar-stage {
+    min-height: 38rem;
+  }
+
+  .avatar-content {
+    padding-bottom: 12rem;
+  }
+
+  .self-view {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    width: auto;
+  }
 }
 
 @media (max-width: 640px) {
   .video-frame {
     min-height: 18rem;
+  }
+
+  .avatar-stage {
+    min-height: 36rem;
+  }
+
+  .meeting-topbar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .avatar-content {
+    padding: 7rem 1rem 11rem;
+  }
+
+  .question-caption p {
+    font-size: 1.45rem;
+  }
+
+  .self-view {
+    height: 8rem;
   }
 
   .toast {
