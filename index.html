@@ -52,7 +52,7 @@
     </header>
 
     <section id="welcomeScreen" class="screen is-active flex-1 py-6">
-      <div class="grid min-h-[calc(100vh-154px)] gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+      <div class="welcome-grid grid min-h-[calc(100vh-154px)] gap-6 lg:grid-cols-[1.18fr_0.82fr]">
         <section class="hero-panel flex flex-col justify-between overflow-hidden border border-white/10 p-7 text-white shadow-academic sm:p-10 lg:p-12">
           <div class="max-w-3xl">
             <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-white/80">
@@ -61,24 +61,24 @@
             </div>
             <h2 class="mt-7 text-5xl font-black leading-[0.96] tracking-tight sm:text-6xl lg:text-7xl">UKCD Digital Interview</h2>
             <p class="mt-6 max-w-2xl text-lg leading-8 text-white/76">
-              A guided interview to understand your study plans, preparation, and goals for your chosen programme.
+              A guided interview to understand your study plans, preparation, and goals in a calm meeting-style experience.
             </p>
           </div>
-          <div class="mt-10 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+          <div class="mt-10 grid gap-3 sm:grid-cols-3">
             <div class="hero-step">
               <i data-lucide="badge-check"></i>
-              <strong>Confirm details</strong>
-              <span>Review your application information.</span>
+              <strong>Confirm identity</strong>
+              <span>Enter your name and applicant ID.</span>
             </div>
             <div class="hero-step">
               <i data-lucide="video"></i>
-              <strong>Check readiness</strong>
-              <span>Allow camera and microphone access.</span>
+              <strong>Join the lobby</strong>
+              <span>Check camera and microphone access.</span>
             </div>
             <div class="hero-step">
               <i data-lucide="messages-square"></i>
               <strong>Answer naturally</strong>
-              <span>Questions are asked one at a time.</span>
+              <span>Your interviewer will ask one question at a time.</span>
             </div>
           </div>
         </section>
@@ -86,9 +86,9 @@
         <aside class="app-card flex flex-col justify-between p-6 sm:p-8 lg:p-10">
           <div>
             <p class="eyebrow">Before You Begin</p>
-            <h2 class="mt-3 text-3xl font-black tracking-tight text-ukcd-navy">Prepare for a calm, focused interview.</h2>
+            <h2 class="mt-3 text-3xl font-black tracking-tight text-ukcd-navy">Prepare for a focused interview.</h2>
             <p class="mt-4 leading-7 text-slate-600">
-              Please complete the interview in one sitting from a quiet, well-lit place. The questions will be played aloud and your spoken responses will be captured automatically.
+              Complete this in one sitting from a quiet, well-lit place. The questions will be played aloud and shown as captions.
             </p>
             <div class="mt-8 grid gap-3">
               <div class="check-row"><i data-lucide="volume-2"></i><span>Use a quiet room and speak clearly.</span></div>
@@ -105,44 +105,30 @@
     </section>
 
     <section id="detailsScreen" class="screen flex-1 py-6">
-      <div class="app-card p-6 sm:p-8 lg:p-10">
-        <div class="section-heading">
+      <div class="details-shell app-card p-6 sm:p-8 lg:p-10">
+        <div class="section-heading text-center">
           <p class="eyebrow">Step 1</p>
-          <h2>Applicant Details</h2>
-          <p>Please confirm your details before continuing.</p>
+          <h2>Confirm Your Details</h2>
+          <p class="mx-auto">We only need your name and applicant ID to start the demo interview.</p>
         </div>
-        <form id="detailsForm" class="mt-8 grid gap-5 md:grid-cols-2" novalidate>
-          <label class="field">Full name<input id="fullName" autocomplete="name" placeholder="e.g. Jane Doe" /></label>
-          <label class="field">Email address<input id="email" type="email" autocomplete="email" placeholder="jane@example.com" /></label>
-          <label class="field">Phone number<input id="phone" autocomplete="tel" placeholder="Including country code" /></label>
-          <label class="field">Student ID<input id="studentId" placeholder="Your student ID" /></label>
-          <label class="field">Programme<input id="programme" placeholder="e.g. Business Management" /></label>
-          <label class="field">Study level
-            <select id="studyLevel">
-              <option value="">Select level</option>
-              <option value="Bachelor's">Bachelor's</option>
-              <option value="Master's">Master's</option>
-              <option value="Foundation">Foundation</option>
-              <option value="Other">Other</option>
-            </select>
-          </label>
-          <label class="field">Country of residence<input id="country" autocomplete="country-name" placeholder="e.g. India" /></label>
-          <label class="field">Intake<input id="intake" placeholder="e.g. September 2026" /></label>
+        <form id="detailsForm" class="mx-auto mt-8 grid w-full max-w-3xl gap-5 md:grid-cols-2" novalidate>
+          <label class="field">Applicant name<input id="fullName" autocomplete="name" placeholder="e.g. Jane Doe" /></label>
+          <label class="field">Applicant ID<input id="studentId" placeholder="Your applicant ID" /></label>
         </form>
-        <div id="detailsErrors" class="mt-5 hidden rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert"></div>
-        <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p class="max-w-xl text-sm leading-6 text-slate-500">Your details help match the interview to your application record.</p>
+        <div id="detailsErrors" class="mx-auto mt-5 hidden max-w-3xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert"></div>
+        <div class="mx-auto mt-8 flex w-full max-w-3xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p class="max-w-xl text-sm leading-6 text-slate-500">The interviewer may ask you to confirm your chosen programme during the session.</p>
           <button id="detailsNextBtn" class="btn btn-primary" type="button">
             <i data-lucide="arrow-right"></i>
-            Continue
+            Continue to Lobby
           </button>
         </div>
       </div>
     </section>
 
     <section id="checkScreen" class="screen flex-1 py-6">
-      <div class="grid min-h-[calc(100vh-154px)] gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-        <div class="video-frame relative overflow-hidden bg-ukcd-navy shadow-academic">
+      <div class="lobby-layout grid min-h-[calc(100vh-154px)] gap-6 lg:grid-rows-[1fr_auto]">
+        <div class="video-frame lobby-preview relative overflow-hidden bg-ukcd-navy shadow-academic">
           <video id="checkPreview" class="h-full w-full object-cover" playsinline autoplay muted></video>
           <div id="checkPlaceholder" class="video-placeholder">
             <i data-lucide="camera"></i>
@@ -150,27 +136,24 @@
             <span>Allow access when your browser asks.</span>
           </div>
         </div>
-        <aside class="app-card flex flex-col justify-between p-6 sm:p-8 lg:p-10">
+        <aside class="app-card lobby-controls p-5 sm:p-6">
           <div>
-            <div class="section-heading">
-              <p class="eyebrow">Step 2</p>
-              <h2>Readiness Check</h2>
-              <p>We will confirm that your camera and microphone are available before the interview begins.</p>
-            </div>
-            <div class="mt-8 grid gap-3">
-              <div class="readiness-row"><span><i data-lucide="camera"></i>Camera</span><strong id="cameraBadge">Waiting</strong></div>
-              <div class="readiness-row"><span><i data-lucide="mic"></i>Microphone</span><strong id="micBadge">Waiting</strong></div>
-              <div class="readiness-row"><span><i data-lucide="shield-check"></i>Setting</span><strong>Quiet space recommended</strong></div>
-            </div>
+            <p class="eyebrow">Pre-interview Lobby</p>
+            <h2 class="mt-2 text-2xl font-black tracking-tight text-ukcd-navy">Check your camera and microphone</h2>
           </div>
-          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button id="retryCameraBtn" class="btn btn-secondary flex-1" type="button">
+          <div class="lobby-readiness grid gap-3 sm:grid-cols-3">
+            <div class="readiness-row"><span><i data-lucide="camera"></i>Camera</span><strong id="cameraBadge">Waiting</strong></div>
+            <div class="readiness-row"><span><i data-lucide="mic"></i>Microphone</span><strong id="micBadge">Waiting</strong></div>
+            <div class="readiness-row"><span><i data-lucide="shield-check"></i>Setting</span><strong>Quiet space</strong></div>
+          </div>
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <button id="retryCameraBtn" class="btn btn-secondary" type="button">
               <i data-lucide="refresh-cw"></i>
               Retry Check
             </button>
-            <button id="startInterviewBtn" class="btn btn-gold flex-1" type="button" disabled>
-              <i data-lucide="play"></i>
-              Start Interview
+            <button id="startInterviewBtn" class="btn btn-gold" type="button" disabled>
+              <i data-lucide="video"></i>
+              Join Interview
             </button>
           </div>
         </aside>
@@ -178,48 +161,65 @@
     </section>
 
     <section id="interviewScreen" class="screen flex-1 py-6">
-      <div class="grid min-h-[calc(100vh-154px)] gap-6 lg:grid-cols-[0.98fr_1.02fr]">
-        <div class="video-frame relative overflow-hidden bg-ukcd-navy shadow-academic">
-          <video id="interviewPreview" class="h-full w-full object-cover" playsinline autoplay muted></video>
-          <div id="interviewPlaceholder" class="video-placeholder hidden">
-            <i data-lucide="video"></i>
-            <strong>Camera preview</strong>
-          </div>
-        </div>
-        <section class="app-card flex flex-col p-6 sm:p-8 lg:p-10">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <span id="questionCounter" class="question-pill">Question 1 of 5</span>
+      <div class="meeting-room min-h-[calc(100vh-154px)]">
+        <section id="avatarStage" class="avatar-stage preparing">
+          <div class="meeting-topbar">
+            <span id="questionCounter" class="question-pill">Question 1 of 6</span>
+            <span class="recording-chip"><span></span>Interview in progress</span>
             <span id="timer" class="timer">00:00</span>
           </div>
-          <div class="question-card mt-7 flex flex-1 flex-col justify-center p-6 sm:p-8">
-            <p id="stageLabel" class="eyebrow">Interview Question</p>
-            <h2 id="questionText" class="mt-4 text-3xl font-black leading-tight tracking-tight text-ukcd-navy sm:text-4xl">Preparing your interview...</h2>
-            <div class="mt-7 rounded-xl border border-ukcd-mutedGold/35 bg-white p-4">
-              <div class="flex items-center gap-3">
-                <div id="listeningBars" class="listening-bars hidden" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-                <i id="statusIcon" data-lucide="loader-circle" class="h-5 w-5 text-ukcd-gold"></i>
-                <p id="statusText" class="font-bold text-ukcd-navy">Please wait.</p>
+
+          <div class="avatar-content">
+            <div class="avatar-orb" aria-hidden="true">
+              <div class="avatar-ring"></div>
+              <div class="avatar-face">
+                <i data-lucide="user-round"></i>
+                <span class="avatar-mouth"></span>
               </div>
             </div>
-            <div class="mt-6 h-2 overflow-hidden rounded-full bg-[#eadfca]">
-              <div id="progressFill" class="h-full w-0 rounded-full bg-gradient-to-r from-ukcd-gold to-ukcd-navy transition-all duration-300"></div>
-            </div>
-            <div class="mt-5 flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-              <span id="instructionText">Answer naturally after the question has been asked.</span>
-              <button id="repeatQuestionBtn" class="btn btn-secondary compact" type="button">
-                <i data-lucide="rotate-ccw"></i>
-                Hear Again
-              </button>
+            <div class="avatar-copy">
+              <p class="eyebrow">UKCD Interviewer</p>
+              <h2 id="stageLabel" class="avatar-stage-label">Interview Question</h2>
+              <div id="questionCaption" class="question-caption">
+                <span>Caption</span>
+                <p id="questionText">Preparing your interview...</p>
+              </div>
+              <div class="avatar-status-row">
+                <div id="listeningBars" class="listening-bars hidden" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                <i id="statusIcon" data-lucide="loader-circle" class="h-5 w-5 text-ukcd-gold"></i>
+                <p id="statusText" class="font-bold text-white">Please wait.</p>
+              </div>
             </div>
           </div>
-          <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-sm leading-6 text-slate-500">Please keep this page open until the completion message appears.</p>
-            <button id="endSessionBtn" class="btn btn-danger" type="button">
-              <i data-lucide="square"></i>
-              End Session
-            </button>
+
+          <div class="self-view">
+            <video id="interviewPreview" class="h-full w-full object-cover" playsinline autoplay muted></video>
+            <div class="self-view-label"><span></span>You</div>
+            <div id="interviewPlaceholder" class="video-placeholder hidden">
+              <i data-lucide="video"></i>
+              <strong>Camera preview</strong>
+            </div>
           </div>
         </section>
+
+        <footer class="meeting-control-bar">
+          <div class="control-progress">
+            <span id="instructionText">Answer naturally after the question has been asked.</span>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-[#eadfca]">
+              <div id="progressFill" class="h-full w-0 rounded-full bg-gradient-to-r from-ukcd-gold to-white transition-all duration-300"></div>
+            </div>
+          </div>
+          <div class="meeting-actions">
+            <button id="repeatQuestionBtn" class="btn btn-secondary compact" type="button">
+              <i data-lucide="rotate-ccw"></i>
+              Hear Again
+            </button>
+            <button id="endSessionBtn" class="btn btn-danger compact" type="button">
+              <i data-lucide="square"></i>
+              End Interview
+            </button>
+          </div>
+        </footer>
       </div>
     </section>
 
@@ -228,7 +228,7 @@
         <div class="max-w-xl">
           <div class="final-icon mx-auto"><i data-lucide="loader-circle"></i></div>
           <h2 class="mt-7 text-3xl font-black tracking-tight text-ukcd-navy">Finalising your interview</h2>
-          <p class="mt-4 leading-7 text-slate-600">Please keep this page open while your interview is securely transferred. This may take a few moments.</p>
+          <p class="mt-4 leading-7 text-slate-600">Please keep this page open while your interview is submitted. This may take a few moments.</p>
         </div>
       </div>
     </section>
