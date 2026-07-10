@@ -39,16 +39,20 @@ export function setStatus(message, options = {}) {
   const statusText = $('statusText');
   if (statusText) statusText.textContent = message;
 
+  const lowerMessage = String(message || '').toLowerCase();
+  const isSpeaking = options.speaking === true || lowerMessage.includes('question being asked') || lowerMessage.includes('played again');
+  const isListening = options.listening === true || lowerMessage.includes('listening');
+
   const listeningBars = $('listeningBars');
-  if (listeningBars) listeningBars.classList.toggle('hidden', options.listening !== true && options.speaking !== true);
+  if (listeningBars) listeningBars.classList.toggle('hidden', !(isSpeaking || isListening));
 
   const icon = $('statusIcon');
   if (icon) {
-    icon.setAttribute('data-lucide', options.icon || (options.listening ? 'audio-lines' : 'loader-circle'));
+    icon.setAttribute('data-lucide', options.icon || (isListening ? 'audio-lines' : 'loader-circle'));
     if (window.lucide) window.lucide.createIcons();
   }
 
-  updateAvatarState(message, options);
+  updateAvatarState(message, { ...options, speaking: isSpeaking, listening: isListening });
 }
 
 export function setReadiness(cameraText, micText) {
@@ -128,13 +132,13 @@ function updateAvatarState(message, options) {
   avatarStage.classList.remove('preparing', 'is-speaking', 'is-listening', 'is-complete');
 
   const text = String(message || '').toLowerCase();
-  if (options.listening || text.includes('listening') || text.includes('answer')) {
-    avatarStage.classList.add('is-listening');
+  if (options.speaking) {
+    avatarStage.classList.add('is-speaking');
     return;
   }
 
-  if (options.speaking || text.includes('question being asked') || text.includes('played again')) {
-    avatarStage.classList.add('is-speaking');
+  if (options.listening || text.includes('listening')) {
+    avatarStage.classList.add('is-listening');
     return;
   }
 
