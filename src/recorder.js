@@ -24,6 +24,7 @@ export class ApplicantRecorder {
     this.mixedDestination = null;
     this.micSource = null;
     this.recordingStream = null;
+    this._currentBufferSource = null;
   }
 
   async requestMedia() {
@@ -94,7 +95,7 @@ export class ApplicantRecorder {
       this.stream.getVideoTracks().forEach((track) => {
         this.recordingStream.addTrack(track);
       });
-      // Add the mixed audio track (mic + any TTS routed through routeAudioElement)
+      // Add the mixed audio track (mic + any TTS played via playAndRecordAudio)
       this.mixedDestination.stream.getAudioTracks().forEach((track) => {
         this.recordingStream.addTrack(track);
       });
@@ -110,25 +111,114 @@ export class ApplicantRecorder {
   }
 
   /**
-   * Route an Audio element (e.g. TTS playback) through the recording mix
-   * so the interviewer's voice is captured in the final video.
-   * The audio still plays through speakers as normal.
+   * Decode an audio Blob, play it through speakers AND capture it into the
+   * recording mix.  Uses AudioBufferSourceNode (no createMediaElementSource,
+   * no CORS concerns, no AudioContext-suspension edge cases).
+   *
+   * Returns a Promise that resolves when playback finishes.
    */
-  routeAudioElement(audioElement) {
+  async playAndRecordAudio(audioBlob) {
+    // If mixing is not available, fall back to a plain Audio element
     if (!this.audioContext || !this.mixedDestination) {
-      this.debug('Audio mixing not available; TTS will not be in recording');
-      return;
+      this.debug('Audio mixing not available; falling back to plain Audio playback');
+      return this._playAudioFallback(audioBlob);
+    }
+
+    // Resume AudioContext if the browser suspended it
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+        this.debug('AudioContext resumed');
+      } catch (e) {
+        this.debug('AudioContext resume failed', e.message);
+        return this._playAudioFallback(audioBlob);
+      }
     }
 
     try {
-      const source = this.audioContext.createMediaElementSource(audioElement);
-      // Connect to the mixed destination (for recording)
-      source.connect(this.mixedDestination);
-      // Also connect to speakers so the applicant can hear it
-      source.connect(this.audioContext.destination);
-      this.debug('TTS audio routed to recording mix and speakers');
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+      return new Promise((resolve) => {
+        const source = this.audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+
+        // Connect to the mixed recording destination
+        source.connect(this.mixedDestination);
+        // Connect to speakers so the applicant hears the question
+        source.connect(this.audioContext.destination);
+
+        this._currentBufferSource = source;
+        let finished = false;
+
+        const done = () => {
+          if (finished) return;
+          finished = true;
+          this._currentBufferSource = null;
+          resolve();
+        };
+
+        source.onended = done;
+
+        source.start(0);
+        this.debug('TTS playing via AudioBuffer (captured in recording)', {
+          duration: audioBuffer.duration.toFixed(2) + 's'
+        });
+
+        // Safety timeout in case onended doesn't fire
+        window.setTimeout(done, (audioBuffer.duration + 3) * 1000);
+      });
     } catch (error) {
-      this.debug('Could not route TTS audio to recording', error.message);
+      this.debug('decodeAudioData failed; falling back to plain Audio', error.message);
+      return this._playAudioFallback(audioBlob);
+    }
+  }
+
+  /**
+   * Plain Audio element fallback — plays through speakers but will NOT
+   * be captured in the recording.  Used only when WebAudio path fails.
+   */
+  _playAudioFallback(audioBlob) {
+    const objectUrl = URL.createObjectURL(audioBlob);
+    return new Promise((resolve) => {
+      const player = new Audio(objectUrl);
+      this._fallbackAudio = player;
+      let finished = false;
+
+      const done = () => {
+        if (finished) return;
+        finished = true;
+        URL.revokeObjectURL(objectUrl);
+        this._fallbackAudio = null;
+        resolve();
+      };
+
+      player.onended = done;
+      player.onerror = () => {
+        this.debug('Fallback Audio playback error');
+        done();
+      };
+      player.play().catch((e) => {
+        this.debug('Fallback Audio play() rejected', e.message);
+        done();
+      });
+
+      // Safety timeout
+      window.setTimeout(done, 30000);
+    });
+  }
+
+  /**
+   * Stop any currently playing TTS audio (buffer source or fallback).
+   */
+  stopCurrentAudio() {
+    if (this._currentBufferSource) {
+      try { this._currentBufferSource.stop(); } catch (e) {}
+      this._currentBufferSource = null;
+    }
+    if (this._fallbackAudio) {
+      try { this._fallbackAudio.pause(); } catch (e) {}
+      this._fallbackAudio = null;
     }
   }
 
@@ -139,7 +229,7 @@ export class ApplicantRecorder {
     // Set up audio mixing so interviewer voice is captured
     this._setupAudioMixing();
 
-    // Record from the mixed stream (mic + TTS) if available, otherwise fall back to camera stream
+    // Record from the mixed stream (mic + TTS) if available, otherwise fall back
     const streamToRecord = this.recordingStream || this.stream;
 
     const mimeType = pickRecordingType();
@@ -232,6 +322,8 @@ export class ApplicantRecorder {
   stopTracks() {
     if (this.monitor) this.monitor.stop();
     this.monitor = null;
+
+    this.stopCurrentAudio();
 
     // Clean up audio mixing
     try { if (this.micSource) this.micSource.disconnect(); } catch (e) {}
