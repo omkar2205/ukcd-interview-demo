@@ -26,7 +26,7 @@ export const INTERVIEW_STAGES = [
   },
   {
     key: 'Academic or Work Background',
-    prompt: 'Ask how the applicant’s previous study, work, skills, or experience connects to the programme. Use friendly professional wording.',
+    prompt: 'Ask how the applicant\u2019s previous study, work, skills, or experience connects to the programme. Use friendly professional wording.',
     fallbackQuestion: 'How does your previous study or work experience relate to this programme?'
   },
   {
@@ -194,6 +194,9 @@ export class InterviewController {
       this.currentAudio = player;
       let completed = false;
 
+      // Route the TTS audio through the recorder's mix so it's captured
+      this.recorder.routeAudioElement(player);
+
       const finish = (error) => {
         if (completed) return;
         completed = true;
@@ -251,6 +254,7 @@ export class InterviewController {
 
     recognition.onresult = (event) => {
       if (this.phase !== 'listening') return;
+
       let interim = '';
 
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
@@ -449,7 +453,6 @@ function isSafeApplicantQuestion(question, student = {}, previousResponses = [])
   const forbidden = /\b(?:ai|groq|google\s+drive|google\s+sheets|api|backend|base64|developer|score|scoring model)\b/i;
   if (forbidden.test(text)) return false;
 
-  // UKCD is the interview brand/platform, not the applicant's institution.
   if (/\bukcd\b/i.test(text)) return false;
 
   const explicitInstitution = String(
