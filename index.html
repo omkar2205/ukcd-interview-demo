@@ -7,215 +7,225 @@
   <title>UKCD Digital Interview</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
-          colors: {
-            ukcd: {
-              navy: '#071b33',
-              ink: '#142235',
-              cream: '#f7f1e4',
-              ivory: '#fffaf1',
-              gold: '#c4a04f',
-              mutedGold: '#d8c18b'
-            }
-          },
-          boxShadow: {
-            academic: '0 24px 70px rgba(7, 27, 51, 0.14)'
-          }
-        }
-      }
-    };
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles/main.css" />
 </head>
-<body class="min-h-screen bg-ukcd-cream font-sans text-ukcd-ink antialiased">
-  <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
-    <header class="app-shell flex flex-col gap-4 border border-white/70 bg-white/90 p-4 shadow-academic backdrop-blur md:flex-row md:items-center md:justify-between">
-      <div class="flex items-center gap-4">
+<body>
+  <main>
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
         <div class="brand-mark" aria-hidden="true">
-          <i data-lucide="graduation-cap"></i>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
         </div>
         <div>
-          <p class="text-xs font-black uppercase tracking-[0.24em] text-ukcd-gold">Applicant Portal</p>
-          <h1 class="text-xl font-black tracking-tight text-ukcd-navy sm:text-2xl">UKCD Digital Interview</h1>
+          <p class="brand-sub">Applicant Portal</p>
+          <h1 class="brand-title">UKCD Digital Interview</h1>
         </div>
       </div>
-      <div class="flex items-center gap-3 rounded-full border border-ukcd-mutedGold/40 bg-ukcd-ivory px-4 py-2 text-sm font-extrabold text-ukcd-navy">
+      <div class="session-pill">
         <span id="sessionDot" class="status-dot"></span>
         <span id="sessionLabel">Ready to begin</span>
       </div>
     </header>
 
-    <section id="welcomeScreen" class="screen is-active flex-1 py-6">
-      <div class="welcome-grid grid min-h-[calc(100vh-154px)] gap-6 lg:grid-cols-[1.18fr_0.82fr]">
-        <section class="hero-panel flex flex-col justify-between overflow-hidden border border-white/10 p-7 text-white shadow-academic sm:p-10 lg:p-12">
-          <div class="max-w-3xl">
-            <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-white/80">
-              <i data-lucide="sparkles" class="h-4 w-4"></i>
-              Digital Interview
-            </div>
-            <h2 class="mt-7 text-5xl font-black leading-[0.96] tracking-tight sm:text-6xl lg:text-7xl">UKCD Digital Interview</h2>
-            <p class="mt-6 max-w-2xl text-lg leading-8 text-white/76">
-              A guided interview to understand your study plans, preparation, and goals in a calm meeting-style experience.
-            </p>
+    <!-- Welcome -->
+    <section id="welcomeScreen" class="screen is-active">
+      <div class="welcome-layout">
+        <div class="welcome-hero">
+          <div class="welcome-hero-content">
+            <p class="tag-label">Digital Interview</p>
+            <h2 class="welcome-title">UKCD Digital Interview</h2>
+            <p class="welcome-subtitle">A guided interview to understand your study plans, preparation, and goals in a calm meeting-style experience.</p>
           </div>
-          <div class="mt-10 grid gap-3 sm:grid-cols-3">
-            <div class="hero-step">
-              <i data-lucide="badge-check"></i>
+          <div class="welcome-steps">
+            <div class="step-card">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>
               <strong>Confirm identity</strong>
               <span>Enter your name and applicant ID.</span>
             </div>
-            <div class="hero-step">
-              <i data-lucide="video"></i>
+            <div class="step-card">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
               <strong>Join the lobby</strong>
               <span>Check camera and microphone access.</span>
             </div>
-            <div class="hero-step">
-              <i data-lucide="messages-square"></i>
+            <div class="step-card">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
               <strong>Answer naturally</strong>
               <span>Your interviewer will ask one question at a time.</span>
             </div>
           </div>
-        </section>
+        </div>
 
-        <aside class="app-card flex flex-col justify-between p-6 sm:p-8 lg:p-10">
+        <div class="welcome-sidebar">
           <div>
-            <p class="eyebrow">Before You Begin</p>
-            <h2 class="mt-3 text-3xl font-black tracking-tight text-ukcd-navy">Prepare for a focused interview.</h2>
-            <p class="mt-4 leading-7 text-slate-600">
-              Complete this in one sitting from a quiet, well-lit place. The questions will be played aloud and shown as captions.
-            </p>
-            <div class="mt-8 grid gap-3">
-              <div class="check-row"><i data-lucide="volume-2"></i><span>Use a quiet room and speak clearly.</span></div>
-              <div class="check-row"><i data-lucide="monitor-check"></i><span>Keep this page open until completion appears.</span></div>
-              <div class="check-row"><i data-lucide="wifi"></i><span>Use a stable internet connection.</span></div>
+            <p class="section-label">Before You Begin</p>
+            <h2 class="sidebar-title">Prepare for a focused interview.</h2>
+            <p class="sidebar-desc">Complete this in one sitting from a quiet, well-lit place. The questions will be played aloud and shown as captions.</p>
+            <div class="checklist">
+              <div class="check-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                <span>Use a quiet room and speak clearly.</span>
+              </div>
+              <div class="check-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+                <span>Keep this page open until completion appears.</span>
+              </div>
+              <div class="check-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>
+                <span>Use a stable internet connection.</span>
+              </div>
             </div>
           </div>
-          <button id="beginBtn" class="btn btn-gold mt-10" type="button">
-            <i data-lucide="arrow-right"></i>
+          <button id="beginBtn" class="btn btn-primary" type="button">
             Begin Interview
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </button>
-        </aside>
+        </div>
       </div>
     </section>
 
-    <section id="detailsScreen" class="screen flex-1 py-6">
-      <div class="details-shell app-card p-6 sm:p-8 lg:p-10">
-        <div class="section-heading text-center">
-          <p class="eyebrow">Step 1</p>
-          <h2>Confirm Your Details</h2>
-          <p class="mx-auto">We only need your name and applicant ID to start the demo interview.</p>
+    <!-- Details -->
+    <section id="detailsScreen" class="screen">
+      <div class="details-card">
+        <div class="details-header">
+          <p class="section-label">Step 1</p>
+          <h2 class="details-title">Confirm Your Details</h2>
+          <p class="details-desc">We only need your name and applicant ID to start the demo interview.</p>
         </div>
-        <form id="detailsForm" class="mx-auto mt-8 grid w-full max-w-3xl gap-5 md:grid-cols-2" novalidate>
-          <label class="field">Applicant name<input id="fullName" autocomplete="name" placeholder="e.g. Jane Doe" /></label>
-          <label class="field">Applicant ID<input id="studentId" placeholder="Your applicant ID" /></label>
+        <form id="detailsForm" class="details-form" novalidate>
+          <label class="field">
+            <span class="field-label">Applicant name</span>
+            <input id="fullName" autocomplete="name" placeholder="e.g. Jane Doe" />
+          </label>
+          <label class="field">
+            <span class="field-label">Applicant ID</span>
+            <input id="studentId" placeholder="Your applicant ID" />
+          </label>
         </form>
-        <div id="detailsErrors" class="mx-auto mt-5 hidden max-w-3xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert"></div>
-        <div class="mx-auto mt-8 flex w-full max-w-3xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p class="max-w-xl text-sm leading-6 text-slate-500">The interviewer may ask you to confirm your chosen programme during the session.</p>
+        <div id="detailsErrors" class="error-box hidden" role="alert"></div>
+        <div class="details-footer">
+          <p class="details-hint">The interviewer may ask you to confirm your chosen programme during the session.</p>
           <button id="detailsNextBtn" class="btn btn-primary" type="button">
-            <i data-lucide="arrow-right"></i>
             Continue to Lobby
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </button>
         </div>
       </div>
     </section>
 
-    <section id="checkScreen" class="screen flex-1 py-6">
-      <div class="lobby-layout grid min-h-[calc(100vh-154px)] gap-6 lg:grid-rows-[1fr_auto]">
-        <div class="video-frame lobby-preview relative overflow-hidden bg-ukcd-navy shadow-academic">
-          <video id="checkPreview" class="h-full w-full object-cover" playsinline autoplay muted></video>
+    <!-- Camera Check / Lobby -->
+    <section id="checkScreen" class="screen">
+      <div class="lobby-layout">
+        <div class="lobby-video-frame">
+          <video id="checkPreview" playsinline autoplay muted></video>
           <div id="checkPlaceholder" class="video-placeholder">
-            <i data-lucide="camera"></i>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
             <strong>Camera preview will appear here</strong>
             <span>Allow access when your browser asks.</span>
           </div>
         </div>
-        <aside class="app-card lobby-controls p-5 sm:p-6">
-          <div>
-            <p class="eyebrow">Pre-interview Lobby</p>
-            <h2 class="mt-2 text-2xl font-black tracking-tight text-ukcd-navy">Check your camera and microphone</h2>
+        <div class="lobby-controls">
+          <div class="lobby-info">
+            <p class="section-label">Pre-interview Lobby</p>
+            <h2 class="lobby-title">Check your camera and microphone</h2>
           </div>
-          <div class="lobby-readiness grid gap-3 sm:grid-cols-3">
-            <div class="readiness-row"><span><i data-lucide="camera"></i>Camera</span><strong id="cameraBadge">Waiting</strong></div>
-            <div class="readiness-row"><span><i data-lucide="mic"></i>Microphone</span><strong id="micBadge">Waiting</strong></div>
-            <div class="readiness-row"><span><i data-lucide="shield-check"></i>Setting</span><strong>Quiet space</strong></div>
+          <div class="readiness-badges">
+            <div class="readiness-item">
+              <span class="readiness-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                Camera
+              </span>
+              <strong id="cameraBadge" class="badge">Waiting</strong>
+            </div>
+            <div class="readiness-item">
+              <span class="readiness-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                Microphone
+              </span>
+              <strong id="micBadge" class="badge">Waiting</strong>
+            </div>
+            <div class="readiness-item">
+              <span class="readiness-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                Setting
+              </span>
+              <strong class="badge">Quiet space</strong>
+            </div>
           </div>
-          <div class="flex flex-col gap-3 sm:flex-row">
+          <div class="lobby-actions">
             <button id="retryCameraBtn" class="btn btn-secondary" type="button">
-              <i data-lucide="refresh-cw"></i>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
               Retry Check
             </button>
-            <button id="startInterviewBtn" class="btn btn-gold" type="button" disabled>
-              <i data-lucide="video"></i>
+            <button id="startInterviewBtn" class="btn btn-primary" type="button" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
               Join Interview
             </button>
           </div>
-        </aside>
+        </div>
       </div>
     </section>
 
-    <section id="interviewScreen" class="screen flex-1 py-6">
-      <div class="meeting-room min-h-[calc(100vh-154px)]">
+    <!-- Interview -->
+    <section id="interviewScreen" class="screen">
+      <div class="meeting-room">
         <section id="avatarStage" class="avatar-stage preparing">
           <div class="meeting-topbar">
-            <span id="questionCounter" class="question-pill">Question 1 of 6</span>
-            <span class="recording-chip"><span></span>Interview in progress</span>
-            <span id="timer" class="timer">00:00</span>
+            <span id="questionCounter" class="topbar-pill">Question 1 of 6</span>
+            <span class="recording-indicator"><span class="rec-dot"></span>Interview in progress</span>
+            <span id="timer" class="topbar-pill">00:00</span>
           </div>
 
           <div class="avatar-content">
             <div class="avatar-orb" aria-hidden="true">
-              <div class="avatar-ring"></div>
+              <svg id="progressRing" class="progress-ring" viewBox="0 0 200 200">
+                <circle class="progress-ring-bg" cx="100" cy="100" r="92" />
+                <circle id="progressArc" class="progress-ring-arc" cx="100" cy="100" r="92"
+                  stroke-dasharray="578.05" stroke-dashoffset="578.05"
+                  transform="rotate(-90 100 100)" />
+              </svg>
               <div class="avatar-face">
-                <i data-lucide="user-round"></i>
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
                 <span class="avatar-mouth"></span>
               </div>
             </div>
-            <div class="avatar-copy">
-              <p class="eyebrow">UKCD Interviewer</p>
-              <h2 id="stageLabel" class="avatar-stage-label">Interview Question</h2>
+
+            <div class="avatar-info">
+              <p class="interviewer-label">UKCD Interviewer</p>
+              <h2 id="stageLabel" class="stage-label">Interview Question</h2>
               <div id="questionCaption" class="question-caption">
-                <span>Caption</span>
+                <span class="caption-tag">Caption</span>
                 <p id="questionText">Preparing your interview...</p>
               </div>
-              <div class="avatar-status-row">
+              <div class="status-row">
                 <div id="listeningBars" class="listening-bars hidden" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-                <i id="statusIcon" data-lucide="loader-circle" class="h-5 w-5 text-ukcd-gold"></i>
-                <p id="statusText" class="font-bold text-white">Please wait.</p>
+                <svg id="statusIcon" class="status-icon spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <p id="statusText" class="status-text">Please wait.</p>
               </div>
             </div>
           </div>
 
           <div class="self-view">
-            <video id="interviewPreview" class="h-full w-full object-cover" playsinline autoplay muted></video>
-            <div class="self-view-label"><span></span>You</div>
+            <video id="interviewPreview" playsinline autoplay muted></video>
+            <div class="self-view-label"><span class="live-dot"></span>You</div>
             <div id="interviewPlaceholder" class="video-placeholder hidden">
-              <i data-lucide="video"></i>
               <strong>Camera preview</strong>
             </div>
           </div>
         </section>
 
-        <footer class="meeting-control-bar">
-          <div class="control-progress">
+        <footer class="meeting-bar">
+          <div class="bar-info">
             <span id="instructionText">Answer naturally after the question has been asked.</span>
-            <div class="mt-2 h-2 overflow-hidden rounded-full bg-[#eadfca]">
-              <div id="progressFill" class="h-full w-0 rounded-full bg-gradient-to-r from-ukcd-gold to-white transition-all duration-300"></div>
-            </div>
           </div>
-          <div class="meeting-actions">
+          <div class="bar-actions">
             <button id="repeatQuestionBtn" class="btn btn-secondary compact" type="button">
-              <i data-lucide="rotate-ccw"></i>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
               Hear Again
             </button>
             <button id="endSessionBtn" class="btn btn-danger compact" type="button">
-              <i data-lucide="square"></i>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
               End Interview
             </button>
           </div>
@@ -223,24 +233,26 @@
       </div>
     </section>
 
-    <section id="finalisingScreen" class="screen flex-1 py-6">
-      <div class="app-card grid min-h-[calc(100vh-154px)] place-items-center p-8 text-center">
-        <div class="max-w-xl">
-          <div class="final-icon mx-auto"><i data-lucide="loader-circle"></i></div>
-          <h2 class="mt-7 text-3xl font-black tracking-tight text-ukcd-navy">Finalising your interview</h2>
-          <p class="mt-4 leading-7 text-slate-600">Please keep this page open while your interview is submitted. This may take a few moments.</p>
+    <!-- Finalising -->
+    <section id="finalisingScreen" class="screen">
+      <div class="center-card">
+        <div class="center-icon spinning">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
         </div>
+        <h2 class="center-title">Finalising your interview</h2>
+        <p class="center-desc">Please keep this page open while your interview is submitted. This may take a few moments.</p>
       </div>
     </section>
 
-    <section id="completeScreen" class="screen flex-1 py-6">
-      <div class="app-card grid min-h-[calc(100vh-154px)] place-items-center p-8 text-center">
-        <div class="max-w-xl">
-          <div class="complete-icon mx-auto"><i data-lucide="check"></i></div>
-          <h2 id="completeTitle" class="mt-7 text-3xl font-black tracking-tight text-ukcd-navy">Interview Completed</h2>
-          <p id="completeText" class="mt-4 leading-7 text-slate-600">Thank you. Your interview has been submitted successfully. You may now close this window.</p>
-          <div id="referenceId" class="mt-6 inline-flex rounded-full border border-ukcd-mutedGold/40 bg-ukcd-ivory px-4 py-2 text-sm font-extrabold text-ukcd-navy"></div>
+    <!-- Complete -->
+    <section id="completeScreen" class="screen">
+      <div class="center-card">
+        <div class="center-icon complete">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </div>
+        <h2 id="completeTitle" class="center-title">Interview Completed</h2>
+        <p id="completeText" class="center-desc">Thank you. Your interview has been submitted successfully. You may now close this window.</p>
+        <div id="referenceId" class="reference-pill"></div>
       </div>
     </section>
 
@@ -249,7 +261,6 @@
 
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script type="module" src="src/app.js"></script>
 </body>
 </html>
