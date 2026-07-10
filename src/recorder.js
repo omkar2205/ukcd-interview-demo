@@ -19,12 +19,13 @@ export class ApplicantRecorder {
     this.watchdog = null;
     this.monitor = null;
 
-    // Audio mixing: combine applicant mic + interviewer TTS into one recorded stream
+    // Audio mixing state
     this.audioContext = null;
     this.mixedDestination = null;
     this.micSource = null;
     this.recordingStream = null;
     this._currentBufferSource = null;
+    this._currentAudioElement = null;
   }
 
   async requestMedia() {
@@ -66,172 +67,219 @@ export class ApplicantRecorder {
     };
   }
 
-  /**
-   * Sets up the Web Audio mixing graph so both the applicant's microphone
-   * and the interviewer's TTS audio are recorded into a single stream.
-   */
+  /* ────────────────────────────────────────────────────
+   * Audio mixing: merge applicant mic + TTS into one
+   * audio track so both appear in the final recording.
+   * ──────────────────────────────────────────────────── */
+
   _setupAudioMixing() {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) {
-        this.debug('AudioContext not available; recording mic only');
+        this.debug('[MIX] AudioContext not available — mic-only recording');
         return;
       }
 
       this.audioContext = new AudioCtx();
-      // Create a destination node whose stream we'll record from
       this.mixedDestination = this.audioContext.createMediaStreamDestination();
 
-      // Connect the applicant's microphone to the mix
+      // Pipe applicant mic into the mix
       if (this.stream && this.stream.getAudioTracks().length > 0) {
         this.micSource = this.audioContext.createMediaStreamSource(this.stream);
         this.micSource.connect(this.mixedDestination);
-        this.debug('Mic audio connected to recording mix');
+        this.debug('[MIX] Mic connected to mix destination');
       }
 
-      // Build the recording stream: video tracks from camera + mixed audio track
-      this.recordingStream = new MediaStream();
-      // Add video tracks from the original camera stream
-      this.stream.getVideoTracks().forEach((track) => {
-        this.recordingStream.addTrack(track);
-      });
-      // Add the mixed audio track (mic + any TTS played via playAndRecordAudio)
-      this.mixedDestination.stream.getAudioTracks().forEach((track) => {
-        this.recordingStream.addTrack(track);
-      });
+      // Build recording stream: camera video + mixed audio
+      const videoTracks = this.stream.getVideoTracks();
+      const mixedAudioTracks = this.mixedDestination.stream.getAudioTracks();
+      this.recordingStream = new MediaStream([...videoTracks, ...mixedAudioTracks]);
 
-      this.debug('Audio mixing setup complete', {
-        videoTracks: this.recordingStream.getVideoTracks().length,
-        audioTracks: this.recordingStream.getAudioTracks().length
+      this.debug('[MIX] Setup complete', {
+        ctxState: this.audioContext.state,
+        ctxSampleRate: this.audioContext.sampleRate,
+        videoTracks: videoTracks.length,
+        mixedAudioTracks: mixedAudioTracks.length
       });
     } catch (error) {
-      this.debug('Audio mixing setup failed; falling back to mic-only', error.message);
+      this.debug('[MIX] Setup FAILED — mic-only recording', error.message);
       this.recordingStream = null;
     }
   }
 
-  /**
-   * Decode an audio Blob, play it through speakers AND capture it into the
-   * recording mix.  Uses AudioBufferSourceNode (no createMediaElementSource,
-   * no CORS concerns, no AudioContext-suspension edge cases).
+  /* ────────────────────────────────────────────────────
+   * Play TTS audio through speakers AND capture it in
+   * the recording.
    *
-   * Returns a Promise that resolves when playback finishes.
-   */
-  async playAndRecordAudio(audioBlob) {
-    // If mixing is not available, fall back to a plain Audio element
-    if (!this.audioContext || !this.mixedDestination) {
-      this.debug('Audio mixing not available; falling back to plain Audio playback');
-      return this._playAudioFallback(audioBlob);
-    }
+   * Strategy:
+   *  1. ALWAYS play via Audio element (reliable speakers)
+   *  2. TRY to also decode the same data and feed a
+   *     silent AudioBufferSourceNode into the mix
+   *     (recording capture — no double-speaker output)
+   *  3. If decode fails, TRY captureStream() on the
+   *     Audio element and pipe that into the mix
+   *  4. If everything fails, TTS still plays but won't
+   *     appear in the recording (graceful degradation)
+   * ──────────────────────────────────────────────────── */
 
-    // Resume AudioContext if the browser suspended it
-    if (this.audioContext.state === 'suspended') {
+  async playAndRecordAudio(audioBlob) {
+    // Resume AudioContext first (browser autoplay policy)
+    if (this.audioContext && this.audioContext.state === 'suspended') {
       try {
         await this.audioContext.resume();
-        this.debug('AudioContext resumed');
+        this.debug('[MIX] AudioContext resumed');
       } catch (e) {
-        this.debug('AudioContext resume failed', e.message);
-        return this._playAudioFallback(audioBlob);
+        this.debug('[MIX] AudioContext resume failed', e.message);
       }
     }
 
-    try {
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-
-      return new Promise((resolve) => {
-        const source = this.audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-
-        // Connect to the mixed recording destination
-        source.connect(this.mixedDestination);
-        // Connect to speakers so the applicant hears the question
-        source.connect(this.audioContext.destination);
-
-        this._currentBufferSource = source;
-        let finished = false;
-
-        const done = () => {
-          if (finished) return;
-          finished = true;
-          this._currentBufferSource = null;
-          resolve();
-        };
-
-        source.onended = done;
-
-        source.start(0);
-        this.debug('TTS playing via AudioBuffer (captured in recording)', {
-          duration: audioBuffer.duration.toFixed(2) + 's'
-        });
-
-        // Safety timeout in case onended doesn't fire
-        window.setTimeout(done, (audioBuffer.duration + 3) * 1000);
-      });
-    } catch (error) {
-      this.debug('decodeAudioData failed; falling back to plain Audio', error.message);
-      return this._playAudioFallback(audioBlob);
-    }
-  }
-
-  /**
-   * Plain Audio element fallback — plays through speakers but will NOT
-   * be captured in the recording.  Used only when WebAudio path fails.
-   */
-  _playAudioFallback(audioBlob) {
     const objectUrl = URL.createObjectURL(audioBlob);
-    return new Promise((resolve) => {
-      const player = new Audio(objectUrl);
-      this._fallbackAudio = player;
-      let finished = false;
+    const player = new Audio(objectUrl);
+    this._currentAudioElement = player;
 
-      const done = () => {
-        if (finished) return;
-        finished = true;
+    // Try to inject TTS into the recording mix (non-blocking)
+    let captureCleanup = null;
+    if (this.audioContext && this.mixedDestination) {
+      captureCleanup = await this._tryCaptureTTS(audioBlob, player);
+    } else {
+      this.debug('[MIX] No audio context — TTS will NOT be in recording');
+    }
+
+    // Play through speakers via Audio element (always reliable)
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
         URL.revokeObjectURL(objectUrl);
-        this._fallbackAudio = null;
+        this._currentAudioElement = null;
+        if (captureCleanup) captureCleanup();
         resolve();
       };
 
-      player.onended = done;
+      player.onended = finish;
       player.onerror = () => {
-        this.debug('Fallback Audio playback error');
-        done();
+        this.debug('[PLAY] Audio element playback error');
+        finish();
       };
       player.play().catch((e) => {
-        this.debug('Fallback Audio play() rejected', e.message);
-        done();
+        this.debug('[PLAY] Audio element play() rejected', e.message);
+        finish();
       });
 
       // Safety timeout
-      window.setTimeout(done, 30000);
+      window.setTimeout(finish, 45000);
     });
   }
 
   /**
-   * Stop any currently playing TTS audio (buffer source or fallback).
+   * Attempts to feed TTS audio into the recording mix.
+   * Returns a cleanup function, or null if capture failed.
+   */
+  async _tryCaptureTTS(audioBlob, audioElement) {
+    // ── Attempt 1: decodeAudioData → AudioBufferSourceNode ──
+    try {
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      this.debug('[MIX] Decoding audio', {
+        byteLength: arrayBuffer.byteLength,
+        ctxState: this.audioContext.state
+      });
+
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer.slice(0));
+      // Note: .slice(0) creates a copy because decodeAudioData detaches the buffer
+
+      const source = this.audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      // Connect ONLY to recording mix — NOT to speakers (Audio element handles that)
+      source.connect(this.mixedDestination);
+      this._currentBufferSource = source;
+      source.start(0);
+
+      this.debug('[MIX] ✓ TTS captured via AudioBufferSourceNode', {
+        duration: audioBuffer.duration.toFixed(2) + 's',
+        sampleRate: audioBuffer.sampleRate,
+        channels: audioBuffer.numberOfChannels
+      });
+
+      return () => {
+        this._currentBufferSource = null;
+        try { source.disconnect(); } catch (e) {}
+      };
+    } catch (decodeError) {
+      this.debug('[MIX] decodeAudioData failed — trying captureStream()', decodeError.message);
+    }
+
+    // ── Attempt 2: captureStream() on the Audio element ──
+    try {
+      if (typeof audioElement.captureStream === 'function') {
+        const ttsStream = audioElement.captureStream();
+        const ttsSource = this.audioContext.createMediaStreamSource(ttsStream);
+        ttsSource.connect(this.mixedDestination);
+
+        this.debug('[MIX] ✓ TTS captured via captureStream()');
+
+        return () => {
+          try { ttsSource.disconnect(); } catch (e) {}
+        };
+      } else if (typeof audioElement.mozCaptureStream === 'function') {
+        // Firefox variant
+        const ttsStream = audioElement.mozCaptureStream();
+        const ttsSource = this.audioContext.createMediaStreamSource(ttsStream);
+        ttsSource.connect(this.mixedDestination);
+
+        this.debug('[MIX] ✓ TTS captured via mozCaptureStream()');
+
+        return () => {
+          try { ttsSource.disconnect(); } catch (e) {}
+        };
+      } else {
+        this.debug('[MIX] captureStream() not available on this browser');
+      }
+    } catch (captureError) {
+      this.debug('[MIX] captureStream() failed', captureError.message);
+    }
+
+    // ── Attempt 3: createMediaElementSource as last resort ──
+    try {
+      const mesSource = this.audioContext.createMediaElementSource(audioElement);
+      mesSource.connect(this.mixedDestination);
+      mesSource.connect(this.audioContext.destination); // must re-route to speakers
+      this.debug('[MIX] ✓ TTS captured via createMediaElementSource');
+
+      return () => {
+        try { mesSource.disconnect(); } catch (e) {}
+      };
+    } catch (mesError) {
+      this.debug('[MIX] createMediaElementSource also failed', mesError.message);
+    }
+
+    this.debug('[MIX] ✗ ALL capture methods failed — TTS will NOT be in recording');
+    return null;
+  }
+
+  /**
+   * Stop any currently playing TTS audio.
    */
   stopCurrentAudio() {
     if (this._currentBufferSource) {
       try { this._currentBufferSource.stop(); } catch (e) {}
       this._currentBufferSource = null;
     }
-    if (this._fallbackAudio) {
-      try { this._fallbackAudio.pause(); } catch (e) {}
-      this._fallbackAudio = null;
+    if (this._currentAudioElement) {
+      try { this._currentAudioElement.pause(); } catch (e) {}
+      this._currentAudioElement = null;
     }
   }
+
+  /* ───── Recording lifecycle ───── */
 
   start() {
     if (!window.MediaRecorder) throw new Error('Recording is not supported in this browser.');
     if (!this.stream) throw new Error('Camera and microphone are not ready.');
 
-    // Set up audio mixing so interviewer voice is captured
     this._setupAudioMixing();
 
-    // Record from the mixed stream (mic + TTS) if available, otherwise fall back
     const streamToRecord = this.recordingStream || this.stream;
-
     const mimeType = pickRecordingType();
     const options = {
       videoBitsPerSecond: 1200000,
@@ -255,7 +303,7 @@ export class ApplicantRecorder {
     this.watchdog = window.setInterval(() => this.requestData(), 2500);
     this.debug('Recording started', {
       mimeType: this.recorder.mimeType || mimeType || 'default',
-      mixedAudio: !!this.recordingStream
+      usingMixedStream: !!this.recordingStream
     });
   }
 
@@ -325,7 +373,6 @@ export class ApplicantRecorder {
 
     this.stopCurrentAudio();
 
-    // Clean up audio mixing
     try { if (this.micSource) this.micSource.disconnect(); } catch (e) {}
     this.micSource = null;
 
@@ -340,6 +387,8 @@ export class ApplicantRecorder {
     this.stream = null;
   }
 }
+
+/* ────── Utility exports ────── */
 
 export async function blobToUploadPack(blob) {
   const dataUrl = await new Promise((resolve, reject) => {
