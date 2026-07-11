@@ -19,6 +19,7 @@ $('detailsNextBtn').addEventListener('click', proceedToReadinessCheck);
 $('retryCameraBtn').addEventListener('click', initCameraPreview);
 $('startInterviewBtn').addEventListener('click', startInterview);
 $('repeatQuestionBtn').addEventListener('click', () => interview && interview.replayQuestion());
+$('skipQuestionBtn').addEventListener('click', () => interview && interview.skipQuestion());
 $('endSessionBtn').addEventListener('click', () => interview && interview.endSession());
 $('detailsForm').addEventListener('submit', (event) => {
   event.preventDefault();
