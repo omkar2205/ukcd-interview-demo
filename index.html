@@ -9,11 +9,31 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles/main.css" />
+  <style>
+    .app-header.hidden { display: none !important; }
+    .welcome-single { min-height: calc(100vh - clamp(20px, 3.6vw, 44px)); }
+    .welcome-single-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(42px, 7vh, 78px);
+    }
+    .begin-circle {
+      display: grid;
+      place-items: center;
+      gap: 0;
+    }
+    .begin-circle svg {
+      width: clamp(44px, 5vw, 62px);
+      height: clamp(44px, 5vw, 62px);
+    }
+  </style>
 </head>
 <body>
   <main>
-    <!-- Header -->
-    <header class="app-header">
+    <!-- Header retained for screen state updates, hidden from applicant UI -->
+    <header class="app-header hidden" aria-hidden="true">
       <div class="header-left">
         <div class="brand-mark" aria-hidden="true">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
@@ -33,12 +53,9 @@
     <section id="welcomeScreen" class="screen is-active">
       <div class="welcome-single">
         <article class="welcome-single-card">
-          <p class="tag-label">Applicant Interview</p>
           <h2 class="welcome-title">UKCD Digital Interview Platform</h2>
-          <p class="welcome-subtitle">A calm, guided academic interview to understand your preparation, course interest, and study goals.</p>
           <button id="beginBtn" class="begin-circle" type="button" aria-label="Begin Interview">
-            <span>Begin</span>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </button>
         </article>
       </div>
