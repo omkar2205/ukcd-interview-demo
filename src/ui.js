@@ -12,7 +12,7 @@ const SCREEN_LABELS = {
   detailsScreen: 'Applicant details',
   checkScreen: 'Pre-interview lobby',
   interviewScreen: 'Recording',
-  finalisingScreen: 'Finalising',
+  finalisingScreen: 'Uploading',
   completeScreen: 'Completed'
 };
 
@@ -56,7 +56,7 @@ export function setStatus(message, options = {}) {
   const listeningBars = $('listeningBars');
   if (listeningBars) listeningBars.classList.toggle('hidden', !(isSpeaking || isListening));
 
-  // Update status icon
+  // Update status icon for screen readers/debug while visual text stays hidden.
   const iconContainer = $('statusIcon');
   if (iconContainer) {
     const iconKey = options.icon || (isListening ? 'audio-lines' : 'loader-circle');
@@ -72,21 +72,38 @@ export function setReadiness(cameraText, micText) {
   $('micBadge').textContent = micText;
 }
 
-export function renderQuestion({ question, stageLabel, index, total }) {
-  $('questionCounter').textContent = `Question ${index} of ${total}`;
-  $('stageLabel').textContent = stageLabel || 'Interview Question';
+export function renderQuestion({ question, stageLabel, index, total, questionType }) {
+  $('questionCounter').textContent = `Question ${index}`;
+  $('stageLabel').textContent = stageLabel || (questionType === 'follow_up' ? 'Follow-up Question' : 'Interview Question');
   $('questionText').textContent = question;
-  $('instructionText').textContent = 'Answer naturally after the question has been asked.';
 
-  // Update circular progress ring: show progress up to (index-1)/total
-  updateProgressRing((index - 1) / total);
+  const instructionText = $('instructionText');
+  if (instructionText) instructionText.textContent = '';
+
+  const denominator = Number(total || 10);
+  const safeFraction = denominator > 0 ? Math.min(0.95, (index - 1) / denominator) : 0;
+  updateProgressRing(safeFraction);
 
   setStatus('Preparing question...', { icon: 'loader-circle' });
 }
 
 export function markQuestionComplete(index, total) {
-  // Update circular progress ring to index/total
-  updateProgressRing(index / total);
+  const denominator = Number(total || 10);
+  const safeFraction = denominator > 0 ? Math.min(0.98, index / denominator) : 0;
+  updateProgressRing(safeFraction);
+}
+
+export function setUploadProgress(percent, message) {
+  const value = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+  const bar = $('uploadProgressBar');
+  const label = $('uploadProgressPercent');
+  const text = $('uploadProgressText');
+  const progress = document.querySelector('.upload-progress');
+
+  if (bar) bar.style.width = `${value}%`;
+  if (label) label.textContent = `${value}%`;
+  if (text && message) text.textContent = message;
+  if (progress) progress.setAttribute('aria-valuenow', String(value));
 }
 
 function updateProgressRing(fraction) {
