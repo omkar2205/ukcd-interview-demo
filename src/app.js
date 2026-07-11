@@ -97,15 +97,18 @@ async function startInterview() {
 }
 
 function collectStudentDetails() {
+  const hiddenContext = getHiddenApplicantContext();
   const student = {
     fullName: value('fullName'),
     studentId: value('studentId'),
-    email: '',
-    phone: '',
-    programme: '',
-    studyLevel: '',
-    country: '',
-    intake: ''
+    email: hiddenContext.email,
+    phone: hiddenContext.phone,
+    programme: hiddenContext.programme,
+    studyLevel: hiddenContext.studyLevel,
+    country: hiddenContext.country,
+    intake: hiddenContext.intake,
+    institution: hiddenContext.institution,
+    studyMode: hiddenContext.studyMode
   };
 
   const errors = [];
@@ -132,12 +135,40 @@ function collectStudentDetails() {
     invalidFields.push('studentId');
   }
 
+  debug('Applicant details collected', {
+    hasProgrammeContext: Boolean(student.programme),
+    hasStudyLevelContext: Boolean(student.studyLevel),
+    hasIntakeContext: Boolean(student.intake)
+  });
+
   return {
     valid: errors.length === 0,
     errors,
     invalidFields: [...new Set(invalidFields)],
     student
   };
+}
+
+function getHiddenApplicantContext() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    email: paramValue(params, ['email', 'emailAddress']),
+    phone: paramValue(params, ['phone', 'mobile', 'phoneNumber']),
+    programme: paramValue(params, ['programme', 'program', 'course', 'courseName']),
+    studyLevel: paramValue(params, ['studyLevel', 'level']),
+    country: paramValue(params, ['country', 'residenceCountry', 'countryOfResidence']),
+    intake: paramValue(params, ['intake', 'startDate']),
+    institution: paramValue(params, ['institution', 'university', 'college']),
+    studyMode: paramValue(params, ['studyMode', 'mode', 'courseOption'])
+  };
+}
+
+function paramValue(params, keys) {
+  for (const key of keys) {
+    const value = params.get(key);
+    if (value && value.trim()) return value.trim();
+  }
+  return '';
 }
 
 function value(id) {
