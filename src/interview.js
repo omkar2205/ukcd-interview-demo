@@ -2,7 +2,7 @@ import { base64ToBlob } from './api.js';
 import { blobToUploadPack, normaliseVideoMimeType } from './recorder.js';
 import {
   $, DEBUG, debug, markQuestionComplete, renderQuestion, setStatus,
-  showCompletion, showScreen, updateTimer
+  setUploadProgress, showCompletion, showScreen, updateTimer
 } from './ui.js';
 
 const SILENCE_MS = 3000;
@@ -12,6 +12,8 @@ const MAX_WAIT_FOR_VOICE_MS = 14000;
 const NO_RESPONSE_AUTO_ADVANCE_MS = 24000;
 const MIN_TRANSCRIPT_CHARS = 10;
 const VOICE_LEVEL_THRESHOLD = 0.026;
+const DEFAULT_TARGET_TOTAL_QUESTIONS = 10;
+const DEFAULT_SAFETY_CAP_QUESTIONS = 14;
 
 export const INTERVIEW_STAGES = [
   {
@@ -26,23 +28,23 @@ export const INTERVIEW_STAGES = [
   },
   {
     key: 'Academic or Work Background',
-    prompt: 'Ask how the applicant\u2019s previous study, work, skills, or experience connects to the programme. Use friendly professional wording.',
+    prompt: 'Ask how the applicant’s previous study, work, skills, or experience connects to the programme. Use friendly professional wording.',
     fallbackQuestion: 'How does your previous study or work experience relate to this programme?'
   },
   {
-    key: 'Career Goals',
-    prompt: 'Ask a career-goals question linking the programme to future plans. Allow natural wording and mild variation.',
-    fallbackQuestion: 'How will this programme support your future career goals?'
+    key: 'Course Knowledge and Subject Interest',
+    prompt: 'Ask what the applicant knows about the course content, modules, skills, or subject areas. Do not invent module names.',
+    fallbackQuestion: 'What do you know about this programme, and which subject area interests you most?'
   },
   {
-    key: 'Funding and Study Preparedness',
-    prompt: 'Ask about funding awareness, preparation, time management, or practical readiness. Keep it student-friendly and professional.',
-    fallbackQuestion: 'How are you planning to fund your studies and living costs?'
+    key: 'Academic Readiness',
+    prompt: 'Ask about assignments, projects, exams, independent learning, time management, or managing study alongside other responsibilities.',
+    fallbackQuestion: 'Can you describe how you manage your time and prepare for assignments, projects, or exams?'
   },
   {
-    key: 'UK Study Awareness',
-    prompt: 'Ask about understanding of UK study expectations, independent learning, student responsibilities, or adapting to a new academic environment.',
-    fallbackQuestion: 'What do you understand about studying in the UK and managing your responsibilities as a student?'
+    key: 'Career and Practical Readiness',
+    prompt: 'Ask how the programme supports future career goals and include practical readiness such as computer access, study tools, attendance, travel, or support needs if appropriate.',
+    fallbackQuestion: 'How will this programme support your future career goals, and how are you preparing to study successfully?'
   }
 ];
 
@@ -55,6 +57,7 @@ export class InterviewController {
     this.stageIndex = -1;
     this.currentQuestion = '';
     this.currentFocus = 'Introduction';
+    this.currentQuestionType = 'core';
     this.phase = 'idle';
     this.startedAt = null;
     this.timerHandle = null;
@@ -68,6 +71,8 @@ export class InterviewController {
     this.heardVoice = false;
     this.answerTimer = null;
     this.completingAnswer = false;
+    this.targetTotalQuestions = DEFAULT_TARGET_TOTAL_QUESTIONS;
+    this.safetyCapQuestions = DEFAULT_SAFETY_CAP_QUESTIONS;
   }
 
   async start() {
@@ -81,6 +86,7 @@ export class InterviewController {
     this.startRecognitionLoop();
     showScreen('interviewScreen');
     this.recorder.attachPreview($('interviewPreview'));
+    this.setSkipButton(true);
     await this.nextQuestion();
   }
 
@@ -88,9 +94,38 @@ export class InterviewController {
     if (!this.currentQuestion || this.phase === 'finalising') return;
     window.clearInterval(this.answerTimer);
     this.completingAnswer = false;
+    this.setSkipButton(true);
     setStatus('The question will be played again.', { icon: 'rotate-ccw' });
     await wait(800);
     await this.speakQuestion(this.currentQuestion);
+  }
+
+  async skipQuestion() {
+    if (!this.currentQuestion || this.phase === 'finalising' || this.phase === 'ended' || this.completingAnswer) return;
+
+    if (this.phase !== 'listening') {
+      setStatus('Please wait until the question has finished.', { icon: 'loader-circle' });
+      return;
+    }
+
+    this.completingAnswer = true;
+    this.setSkipButton(true);
+    window.clearInterval(this.answerTimer);
+
+    this.responses.push({
+      questionNumber: this.stageIndex + 1,
+      question: this.currentQuestion,
+      answer: 'Question skipped by applicant.',
+      focusArea: this.currentFocus,
+      stage: this.currentFocus,
+      questionType: this.currentQuestionType,
+      captureReason: 'skipped'
+    });
+
+    markQuestionComplete(this.stageIndex + 1, this.targetTotalQuestions);
+    setStatus('Question skipped.', { icon: 'check' });
+    await wait(450);
+    await this.nextQuestion();
   }
 
   async endSession() {
@@ -99,37 +134,56 @@ export class InterviewController {
 
   async nextQuestion() {
     this.stageIndex += 1;
-    const stage = INTERVIEW_STAGES[this.stageIndex];
+    const questionNumber = this.stageIndex + 1;
 
-    if (!stage) {
+    if (questionNumber > this.safetyCapQuestions) {
       await this.finish('Completed');
       return;
     }
 
+    const stage = INTERVIEW_STAGES[this.stageIndex] || {
+      key: 'Follow-up',
+      prompt: 'Ask one useful academic follow-up question based on the applicant’s previous answers. Do not repeat previous questions.',
+      fallbackQuestion: 'Can you give one specific example that shows how you are prepared for this programme?'
+    };
+
     setStatus('Preparing the next question...', { icon: 'loader-circle' });
-    const question = await this.loadStageQuestion(stage);
+    this.setSkipButton(true);
+
+    const result = await this.loadStageQuestion(stage, questionNumber);
+
+    if (result.completeInterview || result.shouldFinish) {
+      await this.finish('Completed');
+      return;
+    }
+
+    const question = result.question;
     this.currentQuestion = question;
-    this.currentFocus = stage.key;
+    this.currentFocus = result.focusArea || result.stage || stage.key;
+    this.currentQuestionType = result.questionType || (questionNumber <= INTERVIEW_STAGES.length ? 'core' : 'follow_up');
+    this.targetTotalQuestions = Number(result.targetTotalQuestions || this.targetTotalQuestions || DEFAULT_TARGET_TOTAL_QUESTIONS);
+    this.safetyCapQuestions = Number(result.safetyCapQuestions || this.safetyCapQuestions || DEFAULT_SAFETY_CAP_QUESTIONS);
 
     renderQuestion({
       question,
-      stageLabel: stage.key,
-      index: this.stageIndex + 1,
-      total: INTERVIEW_STAGES.length
+      stageLabel: result.stage || this.currentFocus,
+      index: questionNumber,
+      total: this.targetTotalQuestions,
+      questionType: this.currentQuestionType
     });
 
     await this.speakQuestion(question);
   }
 
-  async loadStageQuestion(stage) {
+  async loadStageQuestion(stage, questionNumber) {
     const request = {
       student: this.student,
-      questionNumber: this.stageIndex + 1,
+      questionNumber,
       responses: this.responses,
       stage: stage.key,
       stagePrompt: stage.prompt,
       fallbackQuestion: stage.fallbackQuestion,
-      creativity: 'moderate'
+      creativity: questionNumber <= INTERVIEW_STAGES.length ? 'moderate' : 'high'
     };
 
     debug('Next question request', {
@@ -141,17 +195,27 @@ export class InterviewController {
 
     try {
       const result = await this.api.getNextQuestion(request);
-      const returnedQuestion = String(result.question || '').trim();
 
       debug('Next question response', {
         questionNumber: request.questionNumber,
         stage: request.stage,
-        returnedQuestion,
-        focusArea: result.focusArea || ''
+        completeInterview: Boolean(result.completeInterview || result.shouldFinish),
+        returnedQuestion: result.question || '',
+        focusArea: result.focusArea || '',
+        questionType: result.questionType || ''
       });
 
+      if (result.completeInterview || result.shouldFinish) {
+        return result;
+      }
+
+      const returnedQuestion = String(result.question || '').trim();
+
       if (isSafeApplicantQuestion(returnedQuestion, this.student, this.responses)) {
-        return returnedQuestion;
+        return {
+          ...result,
+          question: returnedQuestion
+        };
       }
 
       debug('Question rejected by client guardrail; using stage fallback', returnedQuestion);
@@ -159,18 +223,39 @@ export class InterviewController {
       debug('Question service fallback', error.stack || error.message);
     }
 
+    if (questionNumber > INTERVIEW_STAGES.length && this.responses.length >= INTERVIEW_STAGES.length) {
+      return {
+        completeInterview: true,
+        shouldFinish: true,
+        question: '',
+        focusArea: 'Completed',
+        stage: 'Completed',
+        questionType: 'completion'
+      };
+    }
+
     debug('Using fallback question', {
-      questionNumber: this.stageIndex + 1,
+      questionNumber,
       stage: stage.key,
       question: stage.fallbackQuestion
     });
 
-    return stage.fallbackQuestion;
+    return {
+      completeInterview: false,
+      shouldFinish: false,
+      question: stage.fallbackQuestion,
+      focusArea: stage.key,
+      stage: stage.key,
+      questionType: questionNumber <= INTERVIEW_STAGES.length ? 'core-fallback' : 'follow_up_fallback',
+      targetTotalQuestions: this.targetTotalQuestions,
+      safetyCapQuestions: this.safetyCapQuestions
+    };
   }
 
   async speakQuestion(question) {
     this.phase = 'speaking';
     this.resetAnswerCapture();
+    this.setSkipButton(true);
     setStatus('Question being asked...', { icon: 'volume-2' });
 
     try {
@@ -186,9 +271,6 @@ export class InterviewController {
   async playQuestionAudio(question) {
     const audio = await this.api.getQuestionAudio(question);
     const blob = base64ToBlob(audio.audioBase64, audio.mimeType);
-
-    // Play through the recorder's Web Audio graph so the TTS voice
-    // is captured in the recording alongside the applicant's mic.
     await this.recorder.playAndRecordAudio(blob);
   }
 
@@ -286,6 +368,7 @@ export class InterviewController {
     this.answerStartedAt = Date.now();
     this.lastVoiceAt = Date.now();
     setStatus('Listening...', { listening: true, icon: 'audio-lines' });
+    this.setSkipButton(false);
     this.startRecognitionLoop();
 
     this.answerTimer = window.setInterval(() => {
@@ -329,6 +412,7 @@ export class InterviewController {
   async completeCurrentAnswer(reason) {
     if (this.completingAnswer) return;
     this.completingAnswer = true;
+    this.setSkipButton(true);
     window.clearInterval(this.answerTimer);
     setStatus('Answer captured.', { icon: 'check' });
 
@@ -344,6 +428,7 @@ export class InterviewController {
       answer,
       focusArea: this.currentFocus,
       stage: this.currentFocus,
+      questionType: this.currentQuestionType,
       captureReason: reason
     });
 
@@ -351,11 +436,12 @@ export class InterviewController {
       questionNumber: this.stageIndex + 1,
       responsesCount: this.responses.length,
       stage: this.currentFocus,
+      questionType: this.currentQuestionType,
       captureReason: reason,
       answerPreview: answer.slice(0, 120)
     });
 
-    markQuestionComplete(this.stageIndex + 1, INTERVIEW_STAGES.length);
+    markQuestionComplete(this.stageIndex + 1, this.targetTotalQuestions);
     await wait(900);
     await this.nextQuestion();
   }
@@ -364,6 +450,7 @@ export class InterviewController {
     if (this.phase === 'finalising' || this.phase === 'ended') return;
 
     this.phase = 'finalising';
+    this.setSkipButton(true);
     window.clearInterval(this.answerTimer);
     window.clearInterval(this.timerHandle);
     window.speechSynthesis.cancel();
@@ -371,16 +458,28 @@ export class InterviewController {
     try { if (this.recognition) this.recognition.stop(); } catch (error) {}
 
     showScreen('finalisingScreen');
+    setUploadProgress(8, 'Preparing your session for upload...');
 
     try {
+      await wait(250);
+      setUploadProgress(22, 'Finalising your recording...');
       const blob = await this.recorder.stop();
+
+      setUploadProgress(46, 'Preparing the video file...');
       const uploadPack = await blobToUploadPack(blob);
+
+      setUploadProgress(72, 'Uploading your interview session...');
       const payload = this.buildSubmissionPayload(status, blob, uploadPack);
       await this.api.submitInterview(payload);
+
+      setUploadProgress(100, 'Upload complete. Finalising confirmation...');
+      await wait(650);
       this.phase = 'ended';
       showCompletion(true, this.buildReferenceId());
     } catch (error) {
       debug('Final submission warning', error.stack || error.message);
+      setUploadProgress(100, 'Your session has been submitted for review.');
+      await wait(650);
       this.phase = 'ended';
       showCompletion(false, this.buildReferenceId());
     }
@@ -391,7 +490,8 @@ export class InterviewController {
       questionNumber: this.stageIndex + 1,
       question: this.currentQuestion || 'Interview ended',
       answer: 'Interview ended before a clear spoken response was captured.',
-      focusArea: this.currentFocus || 'Interview'
+      focusArea: this.currentFocus || 'Interview',
+      questionType: this.currentQuestionType || 'unknown'
     }];
 
     return {
@@ -403,7 +503,13 @@ export class InterviewController {
       videoMimeType: normaliseVideoMimeType(blob.type || 'video/webm'),
       videoOriginalMimeType: blob.type || 'video/webm',
       videoSizeBytes: blob.size || 0,
-      interviewStages: INTERVIEW_STAGES.map((stage) => stage.key),
+      interviewStages: responses.map((response) => response.stage || response.focusArea || ''),
+      interviewSettings: {
+        minimumCoreQuestions: INTERVIEW_STAGES.length,
+        targetTotalQuestions: this.targetTotalQuestions,
+        safetyCapQuestions: this.safetyCapQuestions,
+        dynamicFollowUpsEnabled: true
+      },
       processingRequested: {
         transcription: true,
         assessmentSummary: true
@@ -422,11 +528,16 @@ export class InterviewController {
     const stamp = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 12);
     return `UKCD-${id}-${stamp}`;
   }
+
+  setSkipButton(disabled) {
+    const skipButton = $('skipQuestionBtn');
+    if (skipButton) skipButton.disabled = disabled;
+  }
 }
 
 function isSafeApplicantQuestion(question, student = {}, previousResponses = []) {
   const text = String(question || '').trim();
-  if (text.length < 10 || text.length > 280) return false;
+  if (text.length < 10 || text.length > 320) return false;
 
   const lower = text.toLowerCase();
   const forbidden = /\b(?:ai|groq|google\s+drive|google\s+sheets|api|backend|base64|developer|score|scoring model)\b/i;
