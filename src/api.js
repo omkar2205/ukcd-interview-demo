@@ -42,15 +42,41 @@ export class InterviewApi {
       creativity: requestBody.creativity
     });
 
-    const result = await postJson(SERVICE_URL, requestBody, 14000);
+    const result = await postJson(SERVICE_URL, requestBody, 18000);
 
-    if (!result || !result.ok || !result.question) {
-      throw new Error(result && result.message ? result.message : 'No question returned.');
+    if (!result || !result.ok) {
+      throw new Error(result && result.message ? result.message : 'No question response returned.');
+    }
+
+    if (result.completeInterview || result.shouldFinish || result.interviewStatus === 'complete') {
+      return {
+        completeInterview: true,
+        shouldFinish: true,
+        closingMessage: result.closingMessage || 'Thank you. That completes your interview.',
+        reason: result.reason || '',
+        questionNumber: result.questionNumber || payload.questionNumber,
+        questionType: result.questionType || 'completion',
+        focusArea: result.focusArea || 'Completed'
+      };
+    }
+
+    if (!result.question) {
+      throw new Error(result.message || 'No question returned.');
     }
 
     return {
+      completeInterview: false,
+      shouldFinish: false,
       question: String(result.question).trim(),
-      focusArea: result.focusArea || payload.stage || 'Suitability'
+      focusArea: result.focusArea || result.stage || payload.stage || 'Interview',
+      stage: result.stage || result.focusArea || payload.stage || 'Interview',
+      stageKey: result.stageKey || '',
+      questionNumber: result.questionNumber || payload.questionNumber,
+      questionType: result.questionType || 'core',
+      minimumCoreQuestions: result.minimumCoreQuestions || 6,
+      targetTotalQuestions: result.targetTotalQuestions || 10,
+      safetyCapQuestions: result.safetyCapQuestions || 14,
+      reason: result.reason || ''
     };
   }
 
