@@ -144,13 +144,25 @@ export class InterviewController {
     const stage = INTERVIEW_STAGES[this.stageIndex] || {
       key: 'Follow-up',
       prompt: 'Ask one useful academic follow-up question based on the applicant’s previous answers. Do not repeat previous questions.',
-      fallbackQuestion: 'Can you give one specific example that shows how you are prepared for this programme?'
+      fallbackQuestion: buildDynamicFallbackQuestion(questionNumber, this.responses)
     };
 
     setStatus('Preparing the next question...', { icon: 'loader-circle' });
     this.setSkipButton(true);
 
-    const result = await this.loadStageQuestion(stage, questionNumber);
+    let result = await this.loadStageQuestion(stage, questionNumber);
+
+    this.targetTotalQuestions = Number(result.targetTotalQuestions || this.targetTotalQuestions || DEFAULT_TARGET_TOTAL_QUESTIONS);
+    this.safetyCapQuestions = Number(result.safetyCapQuestions || this.safetyCapQuestions || DEFAULT_SAFETY_CAP_QUESTIONS);
+
+    if ((result.completeInterview || result.shouldFinish) && questionNumber <= this.targetTotalQuestions) {
+      debug('Backend completed before target question count; forcing follow-up question', {
+        questionNumber,
+        targetTotalQuestions: this.targetTotalQuestions,
+        reason: result.reason || ''
+      });
+      result = this.buildLocalFollowUpResult(stage, questionNumber, 'backend-completed-before-target');
+    }
 
     if (result.completeInterview || result.shouldFinish) {
       await this.finish('Completed');
@@ -161,8 +173,6 @@ export class InterviewController {
     this.currentQuestion = question;
     this.currentFocus = result.focusArea || result.stage || stage.key;
     this.currentQuestionType = result.questionType || (questionNumber <= INTERVIEW_STAGES.length ? 'core' : 'follow_up');
-    this.targetTotalQuestions = Number(result.targetTotalQuestions || this.targetTotalQuestions || DEFAULT_TARGET_TOTAL_QUESTIONS);
-    this.safetyCapQuestions = Number(result.safetyCapQuestions || this.safetyCapQuestions || DEFAULT_SAFETY_CAP_QUESTIONS);
 
     renderQuestion({
       question,
@@ -223,32 +233,31 @@ export class InterviewController {
       debug('Question service fallback', error.stack || error.message);
     }
 
-    if (questionNumber > INTERVIEW_STAGES.length && this.responses.length >= INTERVIEW_STAGES.length) {
-      return {
-        completeInterview: true,
-        shouldFinish: true,
-        question: '',
-        focusArea: 'Completed',
-        stage: 'Completed',
-        questionType: 'completion'
-      };
-    }
+    return this.buildLocalFollowUpResult(stage, questionNumber, 'local-fallback');
+  }
 
-    debug('Using fallback question', {
+  buildLocalFollowUpResult(stage, questionNumber, reason) {
+    const question = questionNumber <= INTERVIEW_STAGES.length
+      ? stage.fallbackQuestion
+      : buildDynamicFallbackQuestion(questionNumber, this.responses);
+
+    debug('Using local fallback question', {
       questionNumber,
       stage: stage.key,
-      question: stage.fallbackQuestion
+      question,
+      reason
     });
 
     return {
       completeInterview: false,
       shouldFinish: false,
-      question: stage.fallbackQuestion,
-      focusArea: stage.key,
-      stage: stage.key,
+      question,
+      focusArea: questionNumber <= INTERVIEW_STAGES.length ? stage.key : 'Follow-up',
+      stage: questionNumber <= INTERVIEW_STAGES.length ? stage.key : 'Follow-up question',
       questionType: questionNumber <= INTERVIEW_STAGES.length ? 'core-fallback' : 'follow_up_fallback',
       targetTotalQuestions: this.targetTotalQuestions,
-      safetyCapQuestions: this.safetyCapQuestions
+      safetyCapQuestions: this.safetyCapQuestions,
+      reason
     };
   }
 
@@ -508,7 +517,8 @@ export class InterviewController {
         minimumCoreQuestions: INTERVIEW_STAGES.length,
         targetTotalQuestions: this.targetTotalQuestions,
         safetyCapQuestions: this.safetyCapQuestions,
-        dynamicFollowUpsEnabled: true
+        dynamicFollowUpsEnabled: true,
+        forcedTargetBeforeCompletion: true
       },
       processingRequested: {
         transcription: true,
@@ -533,6 +543,32 @@ export class InterviewController {
     const skipButton = $('skipQuestionBtn');
     if (skipButton) skipButton.disabled = disabled;
   }
+}
+
+function buildDynamicFallbackQuestion(questionNumber, previousResponses = []) {
+  const followUps = [
+    'Could you expand on your previous answer and give a specific academic example?',
+    'What part of this programme do you think will be most challenging for you, and how will you manage it?',
+    'Can you give an example of how your previous study or experience has prepared you for this programme?',
+    'How do you usually manage independent learning, deadlines, and preparation for assessments?',
+    'What specific skills do you expect to develop through this programme, and how will you use them after completion?',
+    'Can you explain one practical step you have already taken to prepare for starting this programme?',
+    'Which subject area within this programme interests you most, and why?',
+    'How will you stay engaged and organised if you find part of the course difficult?'
+  ];
+
+  const previousQuestions = previousResponses
+    .map((response) => String(response.question || '').trim().toLowerCase())
+    .filter(Boolean);
+
+  const startIndex = Math.max(0, questionNumber - INTERVIEW_STAGES.length - 1);
+
+  for (let offset = 0; offset < followUps.length; offset += 1) {
+    const question = followUps[(startIndex + offset) % followUps.length];
+    if (!previousQuestions.includes(question.toLowerCase())) return question;
+  }
+
+  return 'Can you give one more specific example that shows how you are prepared for this programme?';
 }
 
 function isSafeApplicantQuestion(question, student = {}, previousResponses = []) {
