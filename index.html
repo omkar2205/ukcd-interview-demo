@@ -190,6 +190,62 @@
       </div>
     </section>
 
+    <!-- Feedback -->
+    <section id="feedbackScreen" class="screen">
+      <div class="center-card feedback-card">
+        <p class="feedback-kicker">Optional Feedback</p>
+        <h2 class="center-title">How was your interview experience?</h2>
+        <p class="center-desc">Before submitting your interview, you may share quick feedback. This is optional and will not affect your application outcome.</p>
+
+        <form id="feedbackForm" class="feedback-form">
+          <fieldset class="feedback-group">
+            <legend>Overall experience</legend>
+            <label><input type="radio" name="feedbackOverall" value="Excellent" /> Excellent</label>
+            <label><input type="radio" name="feedbackOverall" value="Good" /> Good</label>
+            <label><input type="radio" name="feedbackOverall" value="Okay" /> Okay</label>
+            <label><input type="radio" name="feedbackOverall" value="Difficult" /> Difficult</label>
+          </fieldset>
+
+          <fieldset class="feedback-group compact-options">
+            <legend>Was the interview easy to understand?</legend>
+            <label><input type="radio" name="feedbackUnderstanding" value="Yes" /> Yes</label>
+            <label><input type="radio" name="feedbackUnderstanding" value="Somewhat" /> Somewhat</label>
+            <label><input type="radio" name="feedbackUnderstanding" value="No" /> No</label>
+          </fieldset>
+
+          <fieldset class="feedback-group compact-options">
+            <legend>Were the questions clear and relevant?</legend>
+            <label><input type="radio" name="feedbackQuestions" value="Yes" /> Yes</label>
+            <label><input type="radio" name="feedbackQuestions" value="Somewhat" /> Somewhat</label>
+            <label><input type="radio" name="feedbackQuestions" value="No" /> No</label>
+          </fieldset>
+
+          <label class="feedback-field">
+            <span>Did you face any technical issues?</span>
+            <select id="feedbackTechnical">
+              <option value="">Select one</option>
+              <option value="No issues">No issues</option>
+              <option value="Camera issue">Camera issue</option>
+              <option value="Microphone issue">Microphone issue</option>
+              <option value="Audio issue">Audio issue</option>
+              <option value="Page/loading issue">Page/loading issue</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+
+          <label class="feedback-field">
+            <span>Feedback comments</span>
+            <textarea id="feedbackComments" rows="4" maxlength="1200" placeholder="Tell us anything that was unclear, difficult, or could be improved."></textarea>
+          </label>
+
+          <div class="feedback-actions">
+            <button id="feedbackSkipBtn" class="btn btn-secondary" type="button">Skip Feedback</button>
+            <button id="feedbackSubmitBtn" class="btn btn-primary" type="submit">Submit Interview</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
     <!-- Finalising -->
     <section id="finalisingScreen" class="screen">
       <div class="center-card upload-card">
