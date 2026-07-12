@@ -227,6 +227,118 @@
   opacity: 0.36;
 }
 
+.feedback-card {
+  width: min(94vw, 760px);
+  gap: 16px;
+  text-align: left;
+}
+
+.feedback-kicker {
+  align-self: center;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.feedback-card .center-title,
+.feedback-card .center-desc {
+  text-align: center;
+}
+
+.feedback-form {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.feedback-group,
+.feedback-field {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.78);
+}
+
+.feedback-group legend,
+.feedback-field span {
+  padding: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.feedback-group {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.feedback-group legend {
+  grid-column: 1 / -1;
+}
+
+.feedback-group.compact-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.feedback-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.feedback-group input {
+  accent-color: #1d4ed8;
+}
+
+.feedback-field select,
+.feedback-field textarea {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  outline: none;
+}
+
+.feedback-field select {
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.feedback-field textarea {
+  min-height: 96px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.feedback-field select:focus,
+.feedback-field textarea:focus {
+  border-color: rgba(29, 78, 216, 0.55);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.10);
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
 .upload-card {
   gap: 14px;
 }
@@ -292,5 +404,19 @@
   .question-caption p {
     max-width: 18ch;
     font-size: clamp(27px, 9vw, 42px);
+  }
+
+  .feedback-group,
+  .feedback-group.compact-options {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-actions {
+    flex-direction: column-reverse;
+  }
+
+  .feedback-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
