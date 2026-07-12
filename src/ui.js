@@ -99,11 +99,99 @@ export function setUploadProgress(percent, message) {
   const label = $('uploadProgressPercent');
   const text = $('uploadProgressText');
   const progress = document.querySelector('.upload-progress');
+  const dino = ensureUploadDino(progress);
 
   if (bar) bar.style.width = `${value}%`;
   if (label) label.textContent = `${value}%`;
   if (text && message) text.textContent = message;
   if (progress) progress.setAttribute('aria-valuenow', String(value));
+  if (dino) {
+    dino.style.left = `${value}%`;
+    dino.classList.toggle('is-complete', value >= 100);
+  }
+}
+
+function ensureUploadDino(progress) {
+  if (!progress) return null;
+
+  let style = document.getElementById('uploadDinoStyles');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'uploadDinoStyles';
+    style.textContent = `
+      .upload-progress {
+        position: relative;
+        overflow: visible !important;
+      }
+
+      .upload-dino-runner {
+        position: absolute;
+        left: 0%;
+        top: -31px;
+        z-index: 4;
+        width: 30px;
+        height: 30px;
+        pointer-events: none;
+        transform: translateX(-50%);
+        transition: left 420ms ease;
+        filter: drop-shadow(0 7px 9px rgba(15, 23, 42, 0.22));
+      }
+
+      .upload-dino-body {
+        display: inline-block;
+        font-size: 24px;
+        line-height: 1;
+        transform-origin: 55% 85%;
+        animation: uploadDinoRun 360ms steps(2, end) infinite;
+      }
+
+      .upload-dino-runner::after {
+        content: '';
+        position: absolute;
+        left: 4px;
+        right: 4px;
+        bottom: -5px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.14);
+        filter: blur(1px);
+        animation: uploadDinoShadow 360ms steps(2, end) infinite;
+      }
+
+      .upload-dino-runner.is-complete .upload-dino-body {
+        animation: uploadDinoCelebrate 520ms ease-in-out infinite;
+      }
+
+      @keyframes uploadDinoRun {
+        0% { transform: translateY(0) rotate(-6deg) scaleX(-1); }
+        50% { transform: translateY(-3px) rotate(5deg) scaleX(-1); }
+        100% { transform: translateY(0) rotate(-6deg) scaleX(-1); }
+      }
+
+      @keyframes uploadDinoShadow {
+        0%, 100% { transform: scaleX(0.86); opacity: 0.46; }
+        50% { transform: scaleX(1); opacity: 0.32; }
+      }
+
+      @keyframes uploadDinoCelebrate {
+        0%, 100% { transform: translateY(0) rotate(-8deg) scaleX(-1); }
+        50% { transform: translateY(-5px) rotate(8deg) scaleX(-1); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  let dino = document.getElementById('uploadDino');
+  if (!dino) {
+    dino = document.createElement('span');
+    dino.id = 'uploadDino';
+    dino.className = 'upload-dino-runner';
+    dino.setAttribute('aria-hidden', 'true');
+    dino.innerHTML = '<span class="upload-dino-body">🦖</span>';
+    progress.appendChild(dino);
+  }
+
+  return dino;
 }
 
 function updateProgressRing(fraction) {
