@@ -38,7 +38,24 @@ export function $(id) {
 
 export function initUi() {
   if (DEBUG) $('debugPanel').classList.remove('hidden');
+  hideInterviewHeadings();
   showScreen('welcomeScreen');
+}
+
+function hideInterviewHeadings() {
+  const interviewerLabel = document.querySelector('.interviewer-label');
+  if (interviewerLabel) {
+    interviewerLabel.textContent = '';
+    interviewerLabel.setAttribute('aria-hidden', 'true');
+    interviewerLabel.style.display = 'none';
+  }
+
+  const stageLabel = $('stageLabel');
+  if (stageLabel) {
+    stageLabel.textContent = '';
+    stageLabel.setAttribute('aria-hidden', 'true');
+    stageLabel.style.display = 'none';
+  }
 }
 
 export function showScreen(screenId) {
@@ -76,7 +93,7 @@ export function setReadiness(cameraText, micText) {
 
 export function renderQuestion({ question, stageLabel, index, total, questionType }) {
   $('questionCounter').textContent = `Question ${index}`;
-  $('stageLabel').textContent = stageLabel || (questionType === 'follow_up' ? 'Follow-up Question' : 'Interview Question');
+  hideInterviewHeadings();
   $('questionText').textContent = question;
 
   const instructionText = $('instructionText');
@@ -123,61 +140,120 @@ function ensureUploadDino(progress) {
     style.textContent = `
       .upload-progress {
         position: relative;
-        overflow: visible !important;
+        height: 18px !important;
+        overflow: hidden !important;
+      }
+
+      .upload-progress-bar {
+        position: relative;
+        z-index: 1;
       }
 
       .upload-dino-runner {
         position: absolute;
         left: 0%;
-        top: -31px;
+        top: 50%;
         z-index: 4;
-        width: 30px;
-        height: 30px;
+        width: 40px;
+        height: 18px;
         pointer-events: none;
-        transform: translateX(-50%);
+        transform: translate(-50%, -50%);
         transition: left 420ms ease;
-        filter: drop-shadow(0 7px 9px rgba(15, 23, 42, 0.22));
       }
 
-      .upload-dino-body {
-        display: inline-block;
-        font-size: 24px;
-        line-height: 1;
-        transform-origin: 55% 85%;
-        animation: uploadDinoRun 360ms steps(2, end) infinite;
+      .upload-dino-head {
+        position: absolute;
+        left: 3px;
+        top: 50%;
+        width: 28px;
+        height: 14px;
+        transform: translateY(-50%);
+        border-radius: 10px 12px 8px 10px;
+        background: #0f172a;
+        box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12), 0 0 10px rgba(15, 23, 42, 0.18);
       }
 
-      .upload-dino-runner::after {
+      .upload-dino-head::before {
         content: '';
         position: absolute;
-        left: 4px;
-        right: 4px;
-        bottom: -5px;
-        height: 4px;
-        border-radius: 999px;
-        background: rgba(15, 23, 42, 0.14);
-        filter: blur(1px);
-        animation: uploadDinoShadow 360ms steps(2, end) infinite;
+        left: 8px;
+        top: 3px;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: #fff;
       }
 
-      .upload-dino-runner.is-complete .upload-dino-body {
+      .upload-dino-head::after {
+        content: '';
+        position: absolute;
+        left: -4px;
+        bottom: 0;
+        width: 9px;
+        height: 9px;
+        border-radius: 7px 0 0 8px;
+        background: #0f172a;
+      }
+
+      .upload-dino-jaw {
+        position: absolute;
+        right: -11px;
+        width: 18px;
+        height: 7px;
+        background: #0f172a;
+        transform-origin: left center;
+      }
+
+      .upload-dino-jaw-top {
+        top: 2px;
+        border-radius: 0 9px 2px 0;
+        animation: uploadDinoTopChomp 330ms ease-in-out infinite;
+      }
+
+      .upload-dino-jaw-bottom {
+        bottom: 2px;
+        border-radius: 0 2px 9px 0;
+        animation: uploadDinoBottomChomp 330ms ease-in-out infinite;
+      }
+
+      .upload-dino-teeth {
+        position: absolute;
+        right: -9px;
+        top: 7px;
+        width: 13px;
+        height: 4px;
+        background: repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 4px);
+        opacity: 0.9;
+        animation: uploadDinoTeeth 330ms ease-in-out infinite;
+      }
+
+      .upload-dino-runner.is-complete .upload-dino-head {
         animation: uploadDinoCelebrate 520ms ease-in-out infinite;
       }
 
-      @keyframes uploadDinoRun {
-        0% { transform: translateY(0) rotate(-6deg) scaleX(-1); }
-        50% { transform: translateY(-3px) rotate(5deg) scaleX(-1); }
-        100% { transform: translateY(0) rotate(-6deg) scaleX(-1); }
+      .upload-dino-runner.is-complete .upload-dino-jaw,
+      .upload-dino-runner.is-complete .upload-dino-teeth {
+        animation-duration: 520ms;
       }
 
-      @keyframes uploadDinoShadow {
-        0%, 100% { transform: scaleX(0.86); opacity: 0.46; }
-        50% { transform: scaleX(1); opacity: 0.32; }
+      @keyframes uploadDinoTopChomp {
+        0%, 100% { transform: rotate(-24deg); }
+        50% { transform: rotate(4deg); }
+      }
+
+      @keyframes uploadDinoBottomChomp {
+        0%, 100% { transform: rotate(24deg); }
+        50% { transform: rotate(-4deg); }
+      }
+
+      @keyframes uploadDinoTeeth {
+        0%, 100% { transform: scaleX(0.92); opacity: 0.75; }
+        50% { transform: scaleX(1); opacity: 0.95; }
       }
 
       @keyframes uploadDinoCelebrate {
-        0%, 100% { transform: translateY(0) rotate(-8deg) scaleX(-1); }
-        50% { transform: translateY(-5px) rotate(8deg) scaleX(-1); }
+        0%, 100% { transform: translateY(-50%) rotate(-4deg); }
+        50% { transform: translateY(calc(-50% - 2px)) rotate(5deg); }
       }
     `;
     document.head.appendChild(style);
@@ -189,7 +265,7 @@ function ensureUploadDino(progress) {
     dino.id = 'uploadDino';
     dino.className = 'upload-dino-runner';
     dino.setAttribute('aria-hidden', 'true');
-    dino.innerHTML = '<span class="upload-dino-body">🦖</span>';
+    dino.innerHTML = '<span class="upload-dino-head"><span class="upload-dino-jaw upload-dino-jaw-top"></span><span class="upload-dino-jaw upload-dino-jaw-bottom"></span><span class="upload-dino-teeth"></span></span>';
     progress.appendChild(dino);
   }
 
