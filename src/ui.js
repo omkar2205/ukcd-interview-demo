@@ -3,6 +3,7 @@ const SCREEN_IDS = [
   'detailsScreen',
   'checkScreen',
   'interviewScreen',
+  'feedbackScreen',
   'finalisingScreen',
   'completeScreen'
 ];
@@ -12,6 +13,7 @@ const SCREEN_LABELS = {
   detailsScreen: 'Applicant details',
   checkScreen: 'Pre-interview lobby',
   interviewScreen: 'Recording',
+  feedbackScreen: 'Feedback',
   finalisingScreen: 'Uploading',
   completeScreen: 'Completed'
 };
