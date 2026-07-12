@@ -73,11 +73,13 @@ export class InterviewController {
     this.completingAnswer = false;
     this.targetTotalQuestions = DEFAULT_TARGET_TOTAL_QUESTIONS;
     this.safetyCapQuestions = DEFAULT_SAFETY_CAP_QUESTIONS;
+    this.feedback = null;
   }
 
   async start() {
     this.responses = [];
     this.stageIndex = -1;
+    this.feedback = null;
     this.startedAt = Date.now();
     this.timerHandle = window.setInterval(() => updateTimer(this.startedAt), 1000);
     updateTimer(this.startedAt);
@@ -91,7 +93,7 @@ export class InterviewController {
   }
 
   async replayQuestion() {
-    if (!this.currentQuestion || this.phase === 'finalising') return;
+    if (!this.currentQuestion || this.phase === 'finalising' || this.phase === 'feedback') return;
     window.clearInterval(this.answerTimer);
     this.completingAnswer = false;
     this.setSkipButton(true);
@@ -101,7 +103,7 @@ export class InterviewController {
   }
 
   async skipQuestion() {
-    if (!this.currentQuestion || this.phase === 'finalising' || this.phase === 'ended' || this.completingAnswer) return;
+    if (!this.currentQuestion || this.phase === 'finalising' || this.phase === 'feedback' || this.phase === 'ended' || this.completingAnswer) return;
 
     if (this.phase !== 'listening') {
       setStatus('Please wait until the question has finished.', { icon: 'loader-circle' });
@@ -344,7 +346,7 @@ export class InterviewController {
     recognition.onerror = (event) => debug('Speech recognition warning', event.error || event.message);
     recognition.onend = () => {
       this.recognitionActive = false;
-      if (this.phase !== 'ended' && this.phase !== 'finalising') {
+      if (this.phase !== 'ended' && this.phase !== 'finalising' && this.phase !== 'feedback') {
         window.setTimeout(() => this.startRecognitionLoop(), 450);
       }
     };
@@ -456,9 +458,9 @@ export class InterviewController {
   }
 
   async finish(status) {
-    if (this.phase === 'finalising' || this.phase === 'ended') return;
+    if (this.phase === 'finalising' || this.phase === 'feedback' || this.phase === 'ended') return;
 
-    this.phase = 'finalising';
+    this.phase = 'feedback';
     this.setSkipButton(true);
     window.clearInterval(this.answerTimer);
     window.clearInterval(this.timerHandle);
@@ -466,13 +468,21 @@ export class InterviewController {
     this.recorder.stopCurrentAudio();
     try { if (this.recognition) this.recognition.stop(); } catch (error) {}
 
-    showScreen('finalisingScreen');
-    setUploadProgress(8, 'Preparing your session for upload...');
+    showScreen('feedbackScreen');
+    resetFeedbackForm_();
+
+    const stopRecordingPromise = this.recorder.stop();
 
     try {
+      this.feedback = await this.waitForFeedback(status);
+
+      this.phase = 'finalising';
+      showScreen('finalisingScreen');
+      setUploadProgress(8, 'Preparing your session for upload...');
+
       await wait(250);
       setUploadProgress(22, 'Finalising your recording...');
-      const blob = await this.recorder.stop();
+      const blob = await stopRecordingPromise;
 
       setUploadProgress(46, 'Preparing the video file...');
       const uploadPack = await blobToUploadPack(blob);
@@ -494,6 +504,34 @@ export class InterviewController {
     }
   }
 
+  waitForFeedback(status) {
+    return new Promise((resolve) => {
+      const form = $('feedbackForm');
+      const skipButton = $('feedbackSkipBtn');
+      const submitButton = $('feedbackSubmitBtn');
+
+      if (!form || !skipButton || !submitButton) {
+        resolve(buildFeedbackPayload_(false, status));
+        return;
+      }
+
+      const finishFeedback = (submitted) => {
+        skipButton.disabled = true;
+        submitButton.disabled = true;
+        form.onsubmit = null;
+        skipButton.onclick = null;
+        resolve(buildFeedbackPayload_(submitted, status));
+      };
+
+      form.onsubmit = (event) => {
+        event.preventDefault();
+        finishFeedback(true);
+      };
+
+      skipButton.onclick = () => finishFeedback(false);
+    });
+  }
+
   buildSubmissionPayload(status, blob, uploadPack) {
     const responses = this.responses.length ? this.responses : [{
       questionNumber: this.stageIndex + 1,
@@ -507,6 +545,7 @@ export class InterviewController {
       action: 'submitInterview',
       student: this.student,
       responses,
+      feedback: this.feedback || buildFeedbackPayload_(false, status),
       summary: buildReviewSummary(status, responses),
       videoBase64: uploadPack.encoded,
       videoMimeType: normaliseVideoMimeType(blob.type || 'video/webm'),
@@ -518,11 +557,13 @@ export class InterviewController {
         targetTotalQuestions: this.targetTotalQuestions,
         safetyCapQuestions: this.safetyCapQuestions,
         dynamicFollowUpsEnabled: true,
-        forcedTargetBeforeCompletion: true
+        forcedTargetBeforeCompletion: true,
+        feedbackEnabled: true
       },
       processingRequested: {
         transcription: true,
-        assessmentSummary: true
+        assessmentSummary: true,
+        feedback: true
       },
       recordingDebug: DEBUG ? {
         chunks: this.recorder.chunks.length,
@@ -543,6 +584,39 @@ export class InterviewController {
     const skipButton = $('skipQuestionBtn');
     if (skipButton) skipButton.disabled = disabled;
   }
+}
+
+function buildFeedbackPayload_(submitted, status) {
+  return {
+    submittedFeedback: submitted ? 'Yes' : 'No',
+    overallExperience: submitted ? checkedValue_('feedbackOverall') : '',
+    interviewEasyToUnderstand: submitted ? checkedValue_('feedbackUnderstanding') : '',
+    questionsClearRelevant: submitted ? checkedValue_('feedbackQuestions') : '',
+    technicalIssue: submitted ? inputValue_('feedbackTechnical') : '',
+    comments: submitted ? inputValue_('feedbackComments') : '',
+    interviewStatus: status || '',
+    submittedAt: new Date().toISOString()
+  };
+}
+
+function resetFeedbackForm_() {
+  const form = $('feedbackForm');
+  if (form) form.reset();
+
+  const skipButton = $('feedbackSkipBtn');
+  const submitButton = $('feedbackSubmitBtn');
+  if (skipButton) skipButton.disabled = false;
+  if (submitButton) submitButton.disabled = false;
+}
+
+function checkedValue_(name) {
+  const selected = document.querySelector(`input[name="${name}"]:checked`);
+  return selected ? selected.value : '';
+}
+
+function inputValue_(id) {
+  const element = $(id);
+  return element ? String(element.value || '').trim() : '';
 }
 
 function buildDynamicFallbackQuestion(questionNumber, previousResponses = []) {
