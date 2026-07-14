@@ -420,3 +420,32 @@
     justify-content: center;
   }
 }
+
+/* Monochrome T-Rex skull override. The animation and SVG geometry remain unchanged. */
+.upload-dino-runner {
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.24)) !important;
+}
+
+.trex-bone {
+  fill: #050505 !important;
+  stroke: #000 !important;
+}
+
+.trex-bone-light {
+  fill: #1f1f1f !important;
+  stroke: #000 !important;
+}
+
+.trex-cavity {
+  fill: #fff !important;
+  stroke: #000 !important;
+}
+
+.trex-detail {
+  stroke: #fff !important;
+}
+
+.trex-tooth {
+  fill: #fff !important;
+  stroke: #000 !important;
+}
