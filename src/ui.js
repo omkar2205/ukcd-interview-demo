@@ -21,7 +21,7 @@ const SCREEN_LABELS = {
 // SVG progress ring circumference (r=92, C=2πr)
 const RING_CIRCUMFERENCE = 2 * Math.PI * 92;
 
-// Status icon SVG templates (inline, no Lucide dependency)
+// Status icon SVG templates (inline, no external icon dependency)
 const STATUS_ICONS = {
   'loader-circle': '<svg class="status-icon spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
   'volume-2': '<svg class="status-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
@@ -75,12 +75,11 @@ export function setStatus(message, options = {}) {
   const listeningBars = $('listeningBars');
   if (listeningBars) listeningBars.classList.toggle('hidden', !(isSpeaking || isListening));
 
-  // Update status icon for screen readers/debug while visual text stays hidden.
   const iconContainer = $('statusIcon');
   if (iconContainer) {
     const iconKey = options.icon || (isListening ? 'audio-lines' : 'loader-circle');
     const svg = STATUS_ICONS[iconKey] || STATUS_ICONS['loader-circle'];
-    iconContainer.outerHTML = svg.replace('class="status-icon', `id="statusIcon" class="status-icon`);
+    iconContainer.outerHTML = svg.replace('class="status-icon', 'id="statusIcon" class="status-icon');
   }
 
   updateAvatarState(message, { ...options, speaking: isSpeaking, listening: isListening });
@@ -91,7 +90,7 @@ export function setReadiness(cameraText, micText) {
   $('micBadge').textContent = micText;
 }
 
-export function renderQuestion({ question, stageLabel, index, total, questionType }) {
+export function renderQuestion({ question, index, total }) {
   $('questionCounter').textContent = `Question ${index}`;
   hideInterviewHeadings();
   $('questionText').textContent = question;
@@ -124,8 +123,10 @@ export function setUploadProgress(percent, message) {
   if (label) label.textContent = `${value}%`;
   if (text && message) text.textContent = message;
   if (progress) progress.setAttribute('aria-valuenow', String(value));
+
   if (dino) {
-    dino.style.left = `${value}%`;
+    // Keep the skull visible at the beginning while allowing a slight overhang at 100%.
+    dino.style.left = `${Math.max(5, value)}%`;
     dino.classList.toggle('is-complete', value >= 100);
   }
 }
@@ -140,8 +141,10 @@ function ensureUploadDino(progress) {
     style.textContent = `
       .upload-progress {
         position: relative;
-        height: 18px !important;
-        overflow: hidden !important;
+        height: 14px !important;
+        margin-top: 34px !important;
+        overflow: visible !important;
+        isolation: isolate;
       }
 
       .upload-progress-bar {
@@ -151,109 +154,107 @@ function ensureUploadDino(progress) {
 
       .upload-dino-runner {
         position: absolute;
-        left: 0%;
+        left: 5%;
         top: 50%;
-        z-index: 4;
-        width: 40px;
-        height: 18px;
+        z-index: 5;
+        width: 96px;
+        height: 72px;
         pointer-events: none;
-        transform: translate(-50%, -50%);
+        transform: translate(-78%, -50%);
         transition: left 420ms ease;
+        filter: drop-shadow(0 8px 8px rgba(15, 23, 42, 0.22));
       }
 
-      .upload-dino-head {
-        position: absolute;
-        left: 3px;
-        top: 50%;
-        width: 28px;
-        height: 14px;
-        transform: translateY(-50%);
-        border-radius: 10px 12px 8px 10px;
-        background: #0f172a;
-        box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12), 0 0 10px rgba(15, 23, 42, 0.18);
+      .upload-trex-skull {
+        display: block;
+        width: 96px;
+        height: 72px;
+        overflow: visible;
+        animation: uploadTrexHeadBob 720ms ease-in-out infinite;
       }
 
-      .upload-dino-head::before {
-        content: '';
-        position: absolute;
-        left: 8px;
-        top: 3px;
-        width: 3px;
-        height: 3px;
-        border-radius: 50%;
-        background: #fff;
+      .trex-bone {
+        fill: #ead9b6;
+        stroke: #6f5d3e;
+        stroke-width: 1.7;
+        stroke-linejoin: round;
+        stroke-linecap: round;
       }
 
-      .upload-dino-head::after {
-        content: '';
-        position: absolute;
-        left: -4px;
-        bottom: 0;
-        width: 9px;
-        height: 9px;
-        border-radius: 7px 0 0 8px;
-        background: #0f172a;
+      .trex-bone-light {
+        fill: #f3e6c9;
+        stroke: #6f5d3e;
+        stroke-width: 1.4;
+        stroke-linejoin: round;
       }
 
-      .upload-dino-jaw {
-        position: absolute;
-        right: -11px;
-        width: 18px;
-        height: 7px;
-        background: #0f172a;
-        transform-origin: left center;
+      .trex-cavity {
+        fill: #17140f;
+        stroke: #6f5d3e;
+        stroke-width: 1.1;
       }
 
-      .upload-dino-jaw-top {
-        top: 2px;
-        border-radius: 0 9px 2px 0;
-        animation: uploadDinoTopChomp 330ms ease-in-out infinite;
+      .trex-detail {
+        fill: none;
+        stroke: #8b7651;
+        stroke-width: 1.25;
+        stroke-linecap: round;
       }
 
-      .upload-dino-jaw-bottom {
-        bottom: 2px;
-        border-radius: 0 2px 9px 0;
-        animation: uploadDinoBottomChomp 330ms ease-in-out infinite;
+      .trex-tooth {
+        fill: #fff7e5;
+        stroke: #6f5d3e;
+        stroke-width: 0.85;
+        stroke-linejoin: round;
       }
 
-      .upload-dino-teeth {
-        position: absolute;
-        right: -9px;
-        top: 7px;
-        width: 13px;
-        height: 4px;
-        background: repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 4px);
-        opacity: 0.9;
-        animation: uploadDinoTeeth 330ms ease-in-out infinite;
+      .trex-skull-lower {
+        transform-box: view-box;
+        transform-origin: 29px 43px;
+        animation: uploadTrexJawChomp 360ms cubic-bezier(.45, 0, .25, 1) infinite;
       }
 
-      .upload-dino-runner.is-complete .upload-dino-head {
-        animation: uploadDinoCelebrate 520ms ease-in-out infinite;
+      .upload-dino-runner.is-complete .upload-trex-skull {
+        animation: uploadTrexFinish 560ms ease both;
       }
 
-      .upload-dino-runner.is-complete .upload-dino-jaw,
-      .upload-dino-runner.is-complete .upload-dino-teeth {
-        animation-duration: 520ms;
+      .upload-dino-runner.is-complete .trex-skull-lower {
+        animation: uploadTrexFinalBite 560ms ease both;
       }
 
-      @keyframes uploadDinoTopChomp {
-        0%, 100% { transform: rotate(-24deg); }
-        50% { transform: rotate(4deg); }
+      @keyframes uploadTrexJawChomp {
+        0%, 100% { transform: rotate(12deg); }
+        48%, 58% { transform: rotate(-2deg); }
       }
 
-      @keyframes uploadDinoBottomChomp {
-        0%, 100% { transform: rotate(24deg); }
-        50% { transform: rotate(-4deg); }
+      @keyframes uploadTrexHeadBob {
+        0%, 100% { transform: translateY(0) rotate(-1deg); }
+        50% { transform: translateY(-1.5px) rotate(1deg); }
       }
 
-      @keyframes uploadDinoTeeth {
-        0%, 100% { transform: scaleX(0.92); opacity: 0.75; }
-        50% { transform: scaleX(1); opacity: 0.95; }
+      @keyframes uploadTrexFinalBite {
+        0% { transform: rotate(12deg); }
+        55% { transform: rotate(-3deg); }
+        100% { transform: rotate(1deg); }
       }
 
-      @keyframes uploadDinoCelebrate {
-        0%, 100% { transform: translateY(-50%) rotate(-4deg); }
-        50% { transform: translateY(calc(-50% - 2px)) rotate(5deg); }
+      @keyframes uploadTrexFinish {
+        0% { transform: translateY(0) rotate(-1deg); }
+        50% { transform: translateY(-3px) rotate(2deg); }
+        100% { transform: translateY(0) rotate(0); }
+      }
+
+      @media (max-width: 640px) {
+        .upload-dino-runner {
+          width: 82px;
+          height: 62px;
+          transform: translate(-78%, -50%);
+        }
+
+        .upload-trex-skull {
+          width: 82px;
+          height: 62px;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -265,7 +266,38 @@ function ensureUploadDino(progress) {
     dino.id = 'uploadDino';
     dino.className = 'upload-dino-runner';
     dino.setAttribute('aria-hidden', 'true');
-    dino.innerHTML = '<span class="upload-dino-head"><span class="upload-dino-jaw upload-dino-jaw-top"></span><span class="upload-dino-jaw upload-dino-jaw-bottom"></span><span class="upload-dino-teeth"></span></span>';
+    dino.innerHTML = `
+      <svg class="upload-trex-skull" viewBox="0 0 96 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g class="trex-skull-upper">
+          <path class="trex-bone" d="M10 38 C6 34 7 27 12 23 C17 18 25 18 31 20 C35 12 43 7 53 7 C64 7 72 12 77 20 L88 24 C92 26 93 31 90 34 L82 39 L69 40 L64 35 L54 34 L48 39 L35 40 L28 37 L20 41 Z"/>
+          <path class="trex-bone-light" d="M32 20 C36 13 44 9 53 9 C62 9 69 13 73 19 L64 21 L58 18 L50 21 L42 18 Z"/>
+          <path class="trex-bone" d="M18 39 L29 39 L33 44 L23 46 L14 44 Z"/>
+          <path class="trex-cavity" d="M42 15 C46 11 54 11 59 15 C58 20 54 23 49 23 C45 22 42 20 42 15 Z"/>
+          <path class="trex-cavity" d="M27 24 C32 21 38 22 41 26 C39 31 35 34 30 33 C27 31 26 28 27 24 Z"/>
+          <path class="trex-cavity" d="M60 23 C65 20 72 22 76 26 L70 32 L61 31 C59 28 59 25 60 23 Z"/>
+          <ellipse class="trex-cavity" cx="83" cy="28" rx="3.4" ry="2.4"/>
+          <path class="trex-detail" d="M13 31 C18 27 22 26 27 27"/>
+          <path class="trex-detail" d="M37 34 C42 29 48 27 54 28"/>
+          <path class="trex-detail" d="M69 34 L82 33"/>
+          <path class="trex-tooth" d="M49 39 L53 47 L57 39 Z"/>
+          <path class="trex-tooth" d="M59 39 L63 47 L67 39 Z"/>
+          <path class="trex-tooth" d="M70 39 L74 46 L78 39 Z"/>
+          <path class="trex-tooth" d="M79 38 L82 44 L86 36 Z"/>
+        </g>
+
+        <g class="trex-skull-lower">
+          <path class="trex-bone" d="M21 44 C30 48 42 50 55 50 L76 46 L87 42 L91 45 L84 52 L67 60 C55 64 42 62 32 57 L23 52 L16 48 Z"/>
+          <path class="trex-bone-light" d="M31 51 C42 55 55 56 68 53 L77 50 L69 57 C56 61 43 59 33 55 Z"/>
+          <path class="trex-cavity" d="M34 52 C42 54 50 55 57 54 C54 58 48 59 42 57 C38 56 35 55 34 52 Z"/>
+          <path class="trex-detail" d="M22 47 C35 53 52 56 69 52"/>
+          <path class="trex-tooth" d="M48 49 L52 42 L56 50 Z"/>
+          <path class="trex-tooth" d="M58 50 L62 43 L66 49 Z"/>
+          <path class="trex-tooth" d="M68 48 L72 42 L76 46 Z"/>
+        </g>
+
+        <circle class="trex-bone-light" cx="29" cy="43" r="3.2"/>
+      </svg>
+    `;
     progress.appendChild(dino);
   }
 
